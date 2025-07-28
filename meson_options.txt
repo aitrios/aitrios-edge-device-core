@@ -1,0 +1,2 @@
+option('target', type: 'string', value: 'raspi')
+option('test_build', type: 'boolean', value: false)

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2024-2025 Sony Semiconductor Solutions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[wrap-git]
+description = Edge Virtualization Platform
+directory = evp
+url = https://github.com/SonySemiconductorSolutions/edge-virtualization-platform.git
+revision = tags/v1.48.1
+clone-recursive = false
+patch_directory = evp
+
+[provide]
+dependency_names = evp

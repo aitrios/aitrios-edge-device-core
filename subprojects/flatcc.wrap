@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2024-2025 Sony Semiconductor Solutions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[wrap-git]
+directory = flatcc
+url = https://github.com/dvidelabs/flatcc
+revision = tags/v0.6.1
+patch_directory = flatcc
+
+[provide]
+dependency_names = flatccrt
+program_names = flatcc_cli

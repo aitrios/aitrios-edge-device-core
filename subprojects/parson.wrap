@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2024-2025 Sony Semiconductor Solutions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[wrap-git]
+directory = parson
+url = https://github.com/kgabis/parson
+revision = HEAD
+diff_files = parson/0001-parson-Add-parson-lib-parson.h.patch
+
+[provide]
+dependency_names = parson

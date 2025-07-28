@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2024-2025 Sony Semiconductor Solutions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[wrap-git]
+directory = wasm-micro-runtime
+url = https://github.com/midokura/wasm-micro-runtime.git
+revision = fe1138b0e86925ce6ec2f699d8f247f8a12254e9
+patch_directory = wasm-micro-runtime

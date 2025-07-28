@@ -1,0 +1,27 @@
+From 34c65de2406a22fcf65c28d8b553bb1444bd1a83 Mon Sep 17 00:00:00 2001
+From: Seimizu Joukan <Qingshui.Shangguan@sony.com>
+Date: Fri, 11 Apr 2025 07:46:40 +0000
+Subject: [PATCH] Don't add sysroot path when searching host command.
+
+---
+ CMakeLists.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f0615027a7..3fb30ce6ae 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -106,6 +106,10 @@ set(CTR_DRBG_128_BIT_KEY_WARNING "${WARNING_BORDER}"
+                          "${CTR_DRBG_128_BIT_KEY_WARN_L3}"
+                          "${WARNING_BORDER}")
+ 
++
++set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
++#set(CMAKE_FIND_DEBUG_MODE 1)
++
+ # Python 3 is only needed here to check for configuration warnings.
+ if(NOT CMAKE_VERSION VERSION_LESS 3.15.0)
+     set(Python3_FIND_STRATEGY LOCATION)
+-- 
+2.43.0
+

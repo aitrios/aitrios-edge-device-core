@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2024-2025 Sony Semiconductor Solutions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[wrap-git]
+directory = base64.c
+url = https://github.com/joedf/base64.c
+revision = HEAD
+patch_directory = base64
+diff_files = base64/0001-base64_lib-Add-subdirectory-for-header-file.patch
+
+[provide]
+dependency_names = base64

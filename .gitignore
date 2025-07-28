@@ -1,0 +1,11 @@
+# Meson's build folder
+builddir/
+
+# Cloned subprojects
+subprojects/base64.c/
+subprojects/evp/
+subprojects/flatcc/
+subprojects/mbedtls/
+subprojects/parson/
+subprojects/quirc/
+subprojects/wasm-micro-runtime/

@@ -1,0 +1,14 @@
+[Unit]
+Description=Edge Device Core Application
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/default/edge-device-core.env
+ExecStart=/usr/bin/edge_device_core
+Type=simple
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

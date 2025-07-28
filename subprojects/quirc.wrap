@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2024-2025 Sony Semiconductor Solutions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[wrap-git]
+directory = quirc
+url = https://github.com/dlbeer/quirc
+revision = tags/v1.2
+patch_directory = quirc
+
+[provide]
+dependency_names = quirc

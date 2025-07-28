@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2024-2025 Sony Semiconductor Solutions Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[wrap-git]
+directory = mbedtls
+url = https://github.com/Mbed-TLS/mbedtls
+revision = tags/v3.6.2
+clone-recursive = true
+diff_files = mbedtls/0001-Don-t-add-sysroot-path-when-searching-host-command.patch
+
+[provide]
+dependency_names = mbedtls

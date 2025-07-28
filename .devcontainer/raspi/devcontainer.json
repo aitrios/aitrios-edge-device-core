@@ -1,0 +1,17 @@
+{
+    "name": "EDC for RasPi",
+    "build": {
+        // Path is relative to the devcontainer.json file.
+        "dockerfile": "Dockerfile",
+        "options": [
+            "--platform=linux/amd64"
+        ]
+    },
+    "remoteUser": "vscode",
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "runArgs": [
+        "--network=host"
+    ]
+}

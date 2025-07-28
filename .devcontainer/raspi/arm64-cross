@@ -1,0 +1,28 @@
+[binaries]
+# Compilers
+c = ['/usr/bin/aarch64-linux-gnu-gcc']
+cpp = ['/usr/bin/aarch64-linux-gnu-g++']
+
+# Other binaries
+ar = ['/usr/bin/aarch64-linux-gnu-ar']
+cmake = ['/usr/bin/cmake']
+ld = ['/usr/bin/aarch64-linux-gnu-ld']
+objcopy = ['/usr/bin/aarch64-linux-gnu-objcopy']
+pkgconfig = ['/usr/bin/aarch64-linux-gnu-pkg-config']
+strip = ['/usr/bin/aarch64-linux-gnu-strip']
+exe_wrapper = ['/usr/bin/qemu-aarch64-static']
+
+[properties]
+
+[cmake]
+
+CMAKE_C_COMPILER = ['/usr/bin/aarch64-linux-gnu-gcc']
+CMAKE_CXX_COMPILER = ['/usr/bin/aarch64-linux-gnu-g++']
+CMAKE_SYSTEM_NAME= 'Linux'
+CMAKE_SYSTEM_PROCESSOR= 'aarch64'
+
+[host_machine]
+cpu = 'arm64'
+cpu_family = 'aarch64'
+endian = 'little'
+system = 'linux'

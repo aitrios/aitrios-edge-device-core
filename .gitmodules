@@ -1,0 +1,12 @@
+[submodule "src/manager"]
+	path = src/manager
+	url = https://github.com/aitrios/aitrios-edge-device-manager
+	branch = main
+[submodule "src/app"]
+	path = src/app
+	url = https://github.com/aitrios/aitrios-edge-device-system-app
+	branch = main
+[submodule "src/sensor"]
+	path = src/sensor
+	url = https://github.com/aitrios/aitrios-edge-device-sensor
+	branch = main

@@ -9,7 +9,7 @@
 ### 1. Clone the repository and update submodules
 
 ```bash
-git clone https://github.com/SonySemiconductorSolutions/aitrios-edge-device-core.git
+git clone https://github.com/aitrios/aitrios-edge-device-core.git
 cd aitrios-edge-device-core
 git submodule update --init
 ```
@@ -88,7 +88,7 @@ sudo apt install ./senscord-edc-rpi*_arm64.deb
 ### 3. Build the project
 
 ```bash
-git clone https://github.com/SonySemiconductorSolutions/aitrios-edge-device-core.git
+git clone https://github.com/aitrios/aitrios-edge-device-core.git
 cd aitrios-edge-device-core
 git submodule update --init
 meson setup builddir

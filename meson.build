@@ -5,7 +5,7 @@
 project(
 	'edge device core',
 	'c', 'cpp',
-	version : '0.1.6',
+	version : '0.1.7',
 )
 cc = meson.get_compiler('c')
 

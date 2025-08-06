@@ -1,0 +1,59 @@
+name: Build EDC for RasPi
+
+on:
+  pull_request:
+  push:
+    paths:
+      main
+
+jobs:
+  build:
+    name: Build EDC for RasPi with the devcontainer
+    runs-on: ubuntu-24.04
+    env:
+      SENSCORD_VER: '0.1.6'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: aitrios/aitrios-edge-device-core
+
+      - name: Update submodules
+        run: |
+          git submodule update --init
+
+      - name: Download senscord package
+        run: |
+          gh release download v${{ env.SENSCORD_VER }} \
+            --repo aitrios/aitrios-edge-device-sensor \
+            --pattern senscord-edc-rpi-${{ env.SENSCORD_VER }}_arm64.deb \
+            --dir .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract senscord package
+        run: |
+          mkdir extracted
+          dpkg-deb -x senscord-edc-rpi-${{ env.SENSCORD_VER }}_arm64.deb extracted/
+
+      - name: Build EDC in the devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          configFile: .devcontainer/raspi/devcontainer.json
+          push: never
+          runCmd: |
+            set -euo pipefail
+            sudo cp -r extracted/opt/senscord /opt/senscord
+            meson setup --cross-file=/usr/share/meson/arm64-cross builddir
+            ninja -v -C builddir
+            cd builddir
+            meson compile deb
+            mv ../senscord-edc-rpi-${{ env.SENSCORD_VER }}_arm64.deb ./
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: RPi_EDC
+          if-no-files-found: error
+          retention-days: 10
+          path: builddir/*.deb

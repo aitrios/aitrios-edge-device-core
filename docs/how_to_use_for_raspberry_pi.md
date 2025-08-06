@@ -46,13 +46,13 @@ sudo rm -rf /opt/senscord
 Download the required packages from their respective release pages:
 
 1. **edge-device-core package**  
-Download the latest `edge-device-core-X.X.X_arm64.deb` from the [edge-device-core releases page](https://github.com/SonySemiconductorSolutions/aitrios-edge-device-core/releases).
+Download the latest `edge-device-core-X.X.X_arm64.deb` from the [edge-device-core releases page](https://github.com/aitrios/aitrios-edge-device-core/releases).
 
 > **Note:**  
 > If you prefer to build the package from source, please see the instructions in [How to build for Raspberry Pi](./how_to_build_for_raspberry_pi.md).
 
 2. **senscord package**<br>
-Download the latest `senscord-edc-rpi-X.X.X_arm64.deb` from the [edge-device-core-sensor releases page](https://github.com/SonySemiconductorSolutions/aitrios-edge-device-core-sensor/releases)
+Download the latest `senscord-edc-rpi-X.X.X_arm64.deb` from the [edge-device-core-sensor releases page](https://github.com/aitrios/aitrios-edge-device-sensor/releases)
 
 Place both downloaded files in your working directory.
 

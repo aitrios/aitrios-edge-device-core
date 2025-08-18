@@ -5,7 +5,7 @@
 [wrap-git]
 directory = mbedtls
 url = https://github.com/Mbed-TLS/mbedtls
-revision = tags/v3.6.2
+revision = tags/v3.6.4
 clone-recursive = true
 diff_files = mbedtls/0001-Don-t-add-sysroot-path-when-searching-host-command.patch
 

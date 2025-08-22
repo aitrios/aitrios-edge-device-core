@@ -206,6 +206,77 @@ See the [systemd setup manual](../systemd/README.md) for service management comm
 sudo pkill -f edge_device_core
 ```
 
+## Running wasi-nn Applications with Edge Device Core
+
+Edge Device Core supports wasi-nn (WebAssembly System Interface for Neural Networks) for running AI inference using WebAssembly applications. This guide explains how to set up and run wasi-nn applications, using License Plate Detection (LPD) + License Plate Recognition (LPR) as an example.
+
+**Note**: You need to prepare your own .rpk model and custom TFLite model for CPU inference for now. Sample .rpk files are available in the `/usr/share/imx500-models` directory.
+
+### Prerequisites for wasi-nn
+
+Before running wasi-nn applications, install the following required components:
+
+```bash
+# Install TensorFlow Lite (if needed)
+# Note: TensorFlow Lite is already included in senscord
+# Install manually only if required:
+wget https://github.com/prepkg/tensorflow-lite-raspberrypi/releases/download/2.20.0/tensorflow-lite_64.deb
+sudo apt install ./tensorflow-lite_64.deb -y
+```
+
+### Sample Application: License Plate Recognition
+
+This example demonstrates how to set up LPD (License Plate Detection) + LPR (License Plate Recognition) using TensorFlow Lite and the wasi-nn backend.
+
+You need to prepare your own custom TFLite model for CPU inference.
+
+#### 1. Download Sample Applications and Models
+
+Pre-built WebAssembly applications are available from the AITRIOS SDK Edge App repository:
+- [AITRIOS SDK Edge App Releases](https://github.com/SonySemiconductorSolutions/aitrios-sdk-edge-app/releases/latest)
+
+#### 2. Replace the Default LPD Model on IMX500
+
+Update the camera configuration to use the custom LPD model:
+
+```bash
+# Update the AI model configuration file
+sudo sed -i 's|/usr/share/rpi-camera-assets/imx500_mobilenet_ssd.json|/opt/senscord/share/rpi-camera-assets/custom.json|' /opt/senscord/share/senscord/config_cam/senscord.xml
+
+# Copy the custom .rpk model file
+sudo cp your_custom_network.rpk /opt/senscord/share/imx500-models/
+```
+
+#### 3. Deploy Your Custom TFLite Model
+
+Place your custom TensorFlow Lite model for CPU inference:
+
+```bash
+# Create the target directory
+sudo mkdir -p /opt/senscord/share/tflite_models
+
+# Copy your custom TFLite model (replace with your own model file)
+sudo cp your_custom_model.tflite /opt/senscord/share/tflite_models/
+```
+
+#### 4. Run the Edge Device Core and Application
+
+- **Ensure Edge Device Core is running** (see the [Running](#running) section above)
+
+### File Locations Summary
+
+| Item                     | Path                                                              |
+|--------------------------|-------------------------------------------------------------------|
+| LPD configuration        | `/opt/senscord/share/senscord/config_cam/senscord.xml`           |
+| Custom model JSON        | `/opt/senscord/share/rpi-camera-assets/custom.json`              |
+| LPD model (.rpk)         | `/opt/senscord/share/imx500-models/your_custom_network.rpk`                  |
+| LPR model (.tflite)      | `/opt/senscord/share/tflite_models/your_custom_model.tflite`     |
+| WebAssembly apps         | Any location (specify path when running)                         |
+| Configuration files      | Application-specific                                              |
+| TensorFlow Lite          | Included in `senscord-libcamera` or install manually if required |
+
+> **Note**: Restart the application or device after making model deployment changes.
+
 ## Troubleshooting
 ### Connection Issues
 - **Cannot connect to MQTT broker**:

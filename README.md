@@ -12,6 +12,18 @@ By using Edge Device Core, developers can easily develop devices that can connec
 - AI model deployment
 - Edge Application deployment
 - Inference control
+- Support Wasi-nn (WebAssembly System Interface for Neural Networks)
+
+#### wasi-nn Support
+
+Edge Device Core includes support for [wasi-nn](https://github.com/WebAssembly/wasi-nn), a WebAssembly System Interface for neural network inference. This enables:
+
+- **Hardware-accelerated AI inference**: Utilize available hardware acceleration for optimal performance
+- **Framework-agnostic model support**: Run models from various ML frameworks (ONNX, TensorFlow Lite, etc.)
+- **Secure sandboxed execution**: AI applications run in a secure WebAssembly environment
+- **Cross-platform compatibility**: Deploy the same AI applications across different hardware platforms (see [AITRIOS Edge AI Devices](https://www.aitrios.sony-semicon.com/edge-ai-devices) for compatibility information)
+
+Wasi-nn allows WebAssembly applications to perform machine learning inference with minimal performance overhead while maintaining security and portability.
 
 ### Supported Environment
 

@@ -59,7 +59,7 @@ Version: $version
 Priority: optional
 Architecture: $debarch
 Maintainer: Shinsuke Tashiro <Shinsuke.Tashiro@sony.com>
-Depends: libc6 (>= 2.35), ca-certificates, libjpeg62-turbo, sqlite3, libsqlite3-dev, libnm-dev
+Depends: libc6 (>= 2.35), ca-certificates, libjpeg62-turbo, sqlite3, libsqlite3-dev, libnm-dev, libopencv-dev
 Description: AITRIOS Edge Device Core
  This package provides the Sony AITRIOS Edge Device Core
 EOF

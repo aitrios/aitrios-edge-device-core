@@ -17,6 +17,22 @@ By using Edge Device Core, developers can easily develop devices that can connec
 
 - Raspberry Pi OS + [Raspberry Pi Camera Module](https://www.raspberrypi.com/documentation/accessories/ai-camera.html)
 
+### Related Repositories (Included in the Edge Device Core)
+
+ - [aitrios/aitrios-edge-device-system-app](https://github.com/aitrios/aitrios-edge-device-system-app) (app)
+ - [aitrios/aitrios-edge-device-manager](https://github.com/aitrios/aitrios-edge-device-manager) (manager)
+ - [aitrios/aitrios-edge-device-sensor](https://github.com/aitrios/aitrios-edge-device-sensor) (sensor)
+   - [SonySemiconductorSolutions/senscord](https://github.com/SonySemiconductorSolutions/senscord)
+   - [SonySemiconductorSolutions/senscord-rpicam-imx500](https://github.com/SonySemiconductorSolutions/senscord-rpicam-imx500)
+ - [SonySemiconductorSolutions/edge-virtualization-platform](https://github.com/SonySemiconductorSolutions/edge-virtualization-platform) (evp)
+
+![Edge Device Core related repositories diagram](docs/images/edc_related_repositories.png)
+
+### Related Repositories (Used with the Edge Device Core)
+
+ - [SonySemiconductorSolutions/local-console](https://github.com/SonySemiconductorSolutions/local-console)
+ - [SonySemiconductorSolutions/aitrios-sdk-edge-app](https://github.com/SonySemiconductorSolutions/aitrios-sdk-edge-app)
+
 ## How to Build
 
 For building the Edge Device Core for Raspberry Pi, you can choose between cross-compilation on a Linux host or native compilation directly on the Raspberry Pi.

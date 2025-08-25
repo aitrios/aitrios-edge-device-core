@@ -21,12 +21,19 @@ extern void wasm_add_native_lib(const char *);
 
 /* ESF Headers */
 #include "memory_manager.h"
+#include "power_manager.h"
 
 /* Local Headers */
 #include "esf.h"
 #include "notifications.h"
 #include "sdk_backdoor.h"
 
+// Define CONFIG_EXTERNAL_POWER_MANAGER_SW_WDT_ID_1 if it is not defined yet for Raspberry Pi
+#ifndef CONFIG_EXTERNAL_POWER_MANAGER_SW_WDT_ID_1
+#define CONFIG_EXTERNAL_POWER_MANAGER_SW_WDT_ID_1 (1)
+#endif
+
+#define EVP_SW_WDT_ID CONFIG_EXTERNAL_POWER_MANAGER_SW_WDT_ID_1
 #define LIB_SENSCORD_WAMR_SO "/opt/senscord/lib/libsenscord_wamr.so"
 static void evp_add_wasm_native_library(const char *fname);
 
@@ -226,6 +233,7 @@ static int evp_agent_flush_wasm_native_symbols()
 static void *evp_agent_thread(void *data)
 {
 	int ret;
+	EsfPwrMgrError wdt_err;
 
 	g_evp_agent.started = true;
 
@@ -262,17 +270,30 @@ static void *evp_agent_thread(void *data)
 	if (ret)
 		goto out_stop_evp_agent;
 
+	wdt_err = EsfPwrMgrSwWdtStart(EVP_SW_WDT_ID);
+	if (wdt_err != kEsfPwrMgrOk)
+		goto out_disconnect_evp_agent;
+
 	set_backdoor_context(ctxt);
 
 	while (ret == 0) {
+		wdt_err = EsfPwrMgrSwWdtKeepalive(EVP_SW_WDT_ID);
+		if (wdt_err != kEsfPwrMgrOk) {
+			fprintf(stderr, "%s(): EsfPwrMgrSwWdtKeepalive failed: %d\n", __func__, wdt_err);
+		}
 		ret = evp_agent_loop(ctxt);
 		if (g_evp_agent.signalled) {
 			break;
 		}
 	}
 
-	evp_agent_disconnect(ctxt);
+	wdt_err = EsfPwrMgrSwWdtStop(EVP_SW_WDT_ID);
+	if (wdt_err != kEsfPwrMgrOk) {
+		fprintf(stderr, "%s(): EsfPwrMgrSwWdtStop failed: %d\n", __func__, wdt_err);
+	}
 
+out_disconnect_evp_agent:
+	evp_agent_disconnect(ctxt);
 out_stop_evp_agent:
 	evp_agent_stop(ctxt);
 out_deinit_proxy_cache:

@@ -25,7 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	libjpeg62-turbo-dev:arm64 \
 	libsqlite3-dev:arm64 \
 	libnm-dev:arm64 \
-	libxml2-dev:arm64
+	libxml2-dev:arm64 \
+	libopencv-dev:arm64 \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
 
 # todo: Figure out why we can't just symlink to qemu-aarch64-static and run
 # meson env2mfile

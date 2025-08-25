@@ -5,7 +5,7 @@
 project(
 	'edge device core',
 	'c', 'cpp',
-	version : '0.1.8',
+	version : '0.1.9',
 )
 cc = meson.get_compiler('c')
 
@@ -25,7 +25,8 @@ wamr_vars.append_link_args('-lm')
 wamr_vars.add_cmake_defines({
   'WAMR_BUILD_TARGET': target_machine.cpu_family().to_upper(),
   'APP_THREAD_STACK_SIZE_DEFAULT': 131072,
-  'APP_THREAD_STACK_SIZE_MIN':     131072
+  'APP_THREAD_STACK_SIZE_MIN':     131072,
+  'CMAKE_PREFIX_PATH': '/opt/senscord'
 })
 wamr = cmake.subproject('wasm-micro-runtime', options : wamr_vars)
 wamr_dep = wamr.dependency('vmlib')

@@ -184,6 +184,10 @@ key_list = [
     'PlStorageDataPreInstallAIModel',
     'PlStorageDataInputTensorOnlyModel',
     'PlStorageDataInputTensorOnlyParam',
+    'PlStorageDataExceptionFactor',
+    'PlStorageDataExceptionInfo',
+    'PlStorageDataEvpExceptionFactor',
+    'PlStorageDataMigrationDone',
 ]
 
 class MyApp(object):

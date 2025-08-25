@@ -12,10 +12,38 @@ By using Edge Device Core, developers can easily develop devices that can connec
 - AI model deployment
 - Edge Application deployment
 - Inference control
+- Support Wasi-nn (WebAssembly System Interface for Neural Networks)
+
+#### wasi-nn Support
+
+Edge Device Core includes support for [wasi-nn](https://github.com/WebAssembly/wasi-nn), a WebAssembly System Interface for neural network inference. This enables:
+
+- **Hardware-accelerated AI inference**: Utilize available hardware acceleration for optimal performance
+- **Framework-agnostic model support**: Run models from various ML frameworks (ONNX, TensorFlow Lite, etc.)
+- **Secure sandboxed execution**: AI applications run in a secure WebAssembly environment
+- **Cross-platform compatibility**: Deploy the same AI applications across different hardware platforms (see [AITRIOS Edge AI Devices](https://www.aitrios.sony-semicon.com/edge-ai-devices) for compatibility information)
+
+Wasi-nn allows WebAssembly applications to perform machine learning inference with minimal performance overhead while maintaining security and portability.
 
 ### Supported Environment
 
 - Raspberry Pi OS + [Raspberry Pi Camera Module](https://www.raspberrypi.com/documentation/accessories/ai-camera.html)
+
+### Related Repositories (Included in the Edge Device Core)
+
+ - [aitrios/aitrios-edge-device-system-app](https://github.com/aitrios/aitrios-edge-device-system-app) (app)
+ - [aitrios/aitrios-edge-device-manager](https://github.com/aitrios/aitrios-edge-device-manager) (manager)
+ - [aitrios/aitrios-edge-device-sensor](https://github.com/aitrios/aitrios-edge-device-sensor) (sensor)
+   - [SonySemiconductorSolutions/senscord](https://github.com/SonySemiconductorSolutions/senscord)
+   - [SonySemiconductorSolutions/senscord-rpicam-imx500](https://github.com/SonySemiconductorSolutions/senscord-rpicam-imx500)
+ - [SonySemiconductorSolutions/edge-virtualization-platform](https://github.com/SonySemiconductorSolutions/edge-virtualization-platform) (evp)
+
+![Edge Device Core related repositories diagram](docs/images/edc_related_repositories.png)
+
+### Related Repositories (Used with the Edge Device Core)
+
+ - [SonySemiconductorSolutions/local-console](https://github.com/SonySemiconductorSolutions/local-console)
+ - [SonySemiconductorSolutions/aitrios-sdk-edge-app](https://github.com/SonySemiconductorSolutions/aitrios-sdk-edge-app)
 
 ## How to Build
 

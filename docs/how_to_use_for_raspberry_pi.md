@@ -45,10 +45,10 @@ sudo rm -rf /opt/senscord
 
 Download the required packages from their respective release pages:
 
-1. **edge-device-core package**  
+1. **edge-device-core package**
 Download the latest `edge-device-core-X.X.X_arm64.deb` from the [edge-device-core releases page](https://github.com/aitrios/aitrios-edge-device-core/releases).
 
-> **Note:**  
+> **Note:**
 > If you prefer to build the package from source, please see the instructions in [How to build for Raspberry Pi](./how_to_build_for_raspberry_pi.md).
 
 2. **senscord package**<br>
@@ -74,7 +74,7 @@ The edge-device-core package requires a SQLite database to store configuration. 
 export EDGE_DEVICE_CORE_DB_PATH=/var/lib/edge-device-core/db.sqlite3
 ```
 
-**Note**: 
+**Note**:
 - The SQLite database and required directories are automatically created during package installation with default local MQTT broker settings. You only need to install the sqlite3 packages if they are not already present.
 - The required directories (`/var/lib/edge-device-core`, `/evp_data` and `/etc/evp`) are automatically created during package installation. The `/evp_data` directory is used for data exchange between edge-device-core and the MQTT broker.
 
@@ -175,7 +175,7 @@ See the [systemd setup manual](../systemd/README.md) for details on how to set u
 ```bash
 export EDGE_DEVICE_CORE_DB_PATH=/var/lib/edge-device-core/db.sqlite3
 cd /opt/senscord/share/senscord
-sudo ./setup_env.sh edge_device_core
+sudo --preserve-env=EDGE_DEVICE_CORE_DB_PATH ./setup_env.sh edge_device_core
 ```
 
 **Expected output:**

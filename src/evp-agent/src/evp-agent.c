@@ -132,24 +132,8 @@ int EVP_undeployModules()
 		return EVP_AGAIN;
 	}
 
-	pthread_mutex_lock(&g_evp_agent.lock);
-	g_evp_agent.cmd = EVP_AGENT_UNDEPLOY_ALL;
-	pthread_mutex_unlock(&g_evp_agent.lock);
-
-	evp_agent_wakeup("BACKDOOR");
-
-	/* Block until the deployment is done */
-	bool spin;
-	do {
-		pthread_mutex_lock(&g_evp_agent.lock);
-		spin = (g_evp_agent.cmd == EVP_AGENT_UNDEPLOY_ALL);
-		pthread_mutex_unlock(&g_evp_agent.lock);
-
-		usleep(1000);
-
-	} while (spin);
-
 	struct evp_agent_context *ctxt = get_backdoor_context();
+	evp_agent_undeploy_all(ctxt);
 	return evp_agent_empty_deployment_has_completed(ctxt);
 }
 

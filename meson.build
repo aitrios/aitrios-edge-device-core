@@ -5,7 +5,7 @@
 project(
 	'edge device core',
 	'c', 'cpp',
-	version : '0.1.9',
+	version : '0.1.10',
 )
 cc = meson.get_compiler('c')
 
@@ -58,6 +58,11 @@ sqlite3_dep = dependency('sqlite3')
 
 # likewise libnm, which comes from libnm-dev and has a package config file
 libnm_dep = dependency('libnm')
+
+# libchrony
+if get_option('target') == 't4r'
+  libchrony_dep = dependency('libchrony')
+endif
 
 senscord_so_dep = declare_dependency(
   link_args: [
@@ -116,8 +121,8 @@ edc = executable(
 		senscord_dep,
 		senscord_so_dep,
 		quirc_dep,
-		sqlite3_dep
-	],
+		sqlite3_dep,
+	]+ (get_option('target') == 't4r' ? [libchrony_dep] : []),
 	c_args : systemapps_arguments,
     install_rpath: '/opt/senscord/lib',
     link_args: ['-lm','-export-dynamic']

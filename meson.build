@@ -156,7 +156,6 @@ libpsm = shared_library(
 		flatcc_dep,
 		base64_dep,
 		jpeg_dep,
-		parson_dep,
 		quirc_dep,
 		libnm_dep,
 		sensor_ai_lib_dep,
@@ -217,12 +216,14 @@ edc = executable(
 
 # A custom target to run the script packaging the output into a .deb file for
 # installation on the Raspberry Pi.
+mkdeb_script = join_paths(meson.source_root(), 'script', 'mk-deb.sh')
 run_target(
 	'deb',
 	command : [
-		'script/mk-deb.sh',
+		mkdeb_script,
 		'-a', target_machine.cpu_family(),
 		'-V', meson.project_version(),
-		'-d', meson.build_root().split('/')[-1]
-	]
+		'-d', meson.build_root()
+	],
+	depends : [edc, libpsm]
 )

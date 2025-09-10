@@ -8,6 +8,9 @@ project(
 	version : '0.1.10',
 )
 cc = meson.get_compiler('c')
+if meson.is_cross_build()
+    sysroot_path = meson.get_cross_property('sys_root', '/')
+endif
 
 # First we need to set up some dependencies for OSS projects that we will
 # consume. These will probably come from our subproject wraps rather than from
@@ -22,12 +25,25 @@ quirc_dep = dependency('quirc', fallback : 'quirc')
 cmake = import('cmake')
 wamr_vars = cmake.subproject_options()
 wamr_vars.append_link_args('-lm')
-wamr_vars.add_cmake_defines({
-  'WAMR_BUILD_TARGET': target_machine.cpu_family().to_upper(),
-  'APP_THREAD_STACK_SIZE_DEFAULT': 131072,
-  'APP_THREAD_STACK_SIZE_MIN':     131072,
-  'CMAKE_PREFIX_PATH': '/opt/senscord'
-})
+fs = import('fs')
+if meson.is_cross_build() and fs.exists(sysroot_path + '/usr/include/onnxruntime/core/session') and fs.exists(sysroot_path + '/usr/lib/libonnxruntime.so')
+  wamr_vars.add_cmake_defines({
+    'WAMR_BUILD_TARGET': target_machine.cpu_family().to_upper(),
+    'APP_THREAD_STACK_SIZE_DEFAULT': 131072,
+    'APP_THREAD_STACK_SIZE_MIN':     131072,
+    'CMAKE_PREFIX_PATH': sysroot_path + '/opt/senscord',
+    'CMAKE_SYSROOT': sysroot_path,
+    'onnxruntime_INCLUDE_DIR': sysroot_path + '/usr/include/onnxruntime/core/session',
+    'onnxruntime_LIBRARY': sysroot_path + '/usr/lib/libonnxruntime.so',
+  })
+else
+  wamr_vars.add_cmake_defines({
+    'WAMR_BUILD_TARGET': target_machine.cpu_family().to_upper(),
+    'APP_THREAD_STACK_SIZE_DEFAULT': 131072,
+    'APP_THREAD_STACK_SIZE_MIN':     131072,
+    'CMAKE_PREFIX_PATH': '/opt/senscord'
+  })
+endif
 wamr = cmake.subproject('wasm-micro-runtime', options : wamr_vars)
 wamr_dep = wamr.dependency('vmlib')
 wasm_iwasm_inc = include_directories('subprojects/wasm-micro-runtime/core/iwasm/include')
@@ -64,17 +80,33 @@ if get_option('target') == 't4r'
   libchrony_dep = dependency('libchrony')
 endif
 
-senscord_so_dep = declare_dependency(
-  link_args: [
-    '/opt/senscord/lib/libsenscord.so',
-    '/opt/senscord/lib/libsenscord_osal.so',
-    '/opt/senscord/lib/libsenscord_wamr.so'
-  ]
-)
+if meson.is_cross_build()
+  senscord_so_dep = declare_dependency(
+    link_args: [
+      sysroot_path + '/opt/senscord/lib/libsenscord.so',
+      sysroot_path + '/opt/senscord/lib/libsenscord_osal.so',
+      sysroot_path + '/opt/senscord/lib/libsenscord_wamr.so'
+    ]
+  )
+else
+  senscord_so_dep = declare_dependency(
+    link_args: [
+      '/opt/senscord/lib/libsenscord.so',
+      '/opt/senscord/lib/libsenscord_osal.so',
+      '/opt/senscord/lib/libsenscord_wamr.so'
+    ]
+  )
+endif
 
-inc_senscord = include_directories(
-  '/opt/senscord/include'
-)
+if meson.is_cross_build()
+  inc_senscord = include_directories(
+    sysroot_path + '/opt/senscord/include'
+  )
+else
+  inc_senscord = include_directories(
+    '/opt/senscord/include'
+  )
+endif
 
 senscord_dep = declare_dependency(
   include_directories: [

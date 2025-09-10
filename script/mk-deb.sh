@@ -68,6 +68,15 @@ EOF
 mkdir -p "${buildroot}/dist/usr/bin"
 cp "${buildroot}/edge_device_core" "${buildroot}/dist/usr/bin/"
 
+# copy shared library
+case "$debarch" in
+    arm64)   LIBDIR="/usr/lib/aarch64-linux-gnu" ;;
+    amd64)   LIBDIR="/usr/lib/x86_64-linux-gnu" ;;
+    *) echo "Unsupported arch: $debarch" >&2; exit 1 ;;
+esac
+mkdir -p "${buildroot}/dist${LIBDIR}"
+cp "${buildroot}/libparameter_storage_manager.so" "${buildroot}/dist${LIBDIR}/"
+
 # copy systemd service file
 mkdir -p "${buildroot}/dist/lib/systemd/system"
 cp "${MESON_SOURCE_ROOT}/systemd/edge-device-core.service" "${buildroot}/dist/lib/systemd/system/"

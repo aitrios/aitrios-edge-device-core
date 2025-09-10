@@ -16,7 +16,7 @@ git submodule update --init
 
 ### 2. Download the senscord-edc-rpi .deb package
 
-Download the latest `senscord-edc-rpi_X.X.X_arm64.deb` from the [Releases page](https://github.com/aitrios/aitrios-edge-device-sensor/releases)  
+Download the latest `senscord-edc-rpi_X.X.X_arm64.deb` from the [Releases page](https://github.com/aitrios/aitrios-edge-device-sensor/releases)
 
 Place the downloaded `.deb` file in the project root directory.
 
@@ -58,7 +58,7 @@ cd builddir
 meson compile deb
 ```
 
-The resulting `.deb` file will be available at `builddir/edge-device-core-X.X.X_arm64.deb`.  
+The resulting `.deb` file will be available at `builddir/edge-device-core-X.X.X_arm64.deb`.
 Transfer it to your Raspberry Pi and go to [How to use for Raspberry Pi](./how_to_use_for_raspberry_pi.md) to install and run the package.
 
 ---
@@ -74,7 +74,7 @@ sudo apt install meson python3-kconfiglib libbsd-dev cmake libjpeg-dev \
 
 ### 2. Download and install the senscord-edc-rpi package
 
-Download the latest `senscord-edc-rpi_X.X.X_arm64.deb` from the [Releases page](https://github.com/aitrios/aitrios-edge-device-sensor/releases)  
+Download the latest `senscord-edc-rpi_X.X.X_arm64.deb` from the [Releases page](https://github.com/aitrios/aitrios-edge-device-sensor/releases)
 
 Place the downloaded `.deb` file in the project root directory.
 

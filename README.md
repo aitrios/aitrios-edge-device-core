@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Edge Device Core** is a core module for edge devices developed by Sony Semiconductor Solutions.  
+**Edge Device Core** is a core module for edge devices developed by Sony Semiconductor Solutions.
 This module provides essential functions to connect devices to the [AITRIOS Console](https://www.aitrios.sony-semicon.com/) and supports real-world edge AI operations.
 By using Edge Device Core, developers can easily develop devices that can connect to the AITRIOS Console.
 
@@ -120,15 +120,15 @@ For development and testing purposes, Edge Device Core can work with a local MQT
 ├── src/                                # Source code and submodules
 ├── subprojects/                        # dependencies managed by Meson
 └── systemd/                            # systemd service configuration
-    
+
 ```
 
 ## Contribution
 
-We welcome contributions to this project!  
+We welcome contributions to this project!
 Issues and pull requests are welcome and we appreciate bug reports, feature requests, and any contributions from the community.
 
-For details on how to contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md).  
+For details on how to contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 For our code of conduct, please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Security

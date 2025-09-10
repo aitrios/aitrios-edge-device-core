@@ -110,8 +110,8 @@ AITRIOS Online Console is a cloud-based device management platform that allows y
 **Installation and configuration:**
 ```bash
 # 1. Remove default certificate files
-rm -f /etc/evp/00000000-0000-0000-0000-000000000000_cert.pem
-rm -f /etc/evp/00000000-0000-0000-0000-000000000000_key.pem
+sudo rm -f /etc/evp/00000000-0000-0000-0000-000000000000_cert.pem
+sudo rm -f /etc/evp/00000000-0000-0000-0000-000000000000_key.pem
 
 # 2. Please replace *_cert.pem and *_key.pem with your actual certificate and key file names
 sudo cp *_cert.pem /etc/evp/ # Device certificate file
@@ -119,7 +119,7 @@ sudo cp *_key.pem /etc/evp/  # Device private key file
 
 # 3. Configure database parameters (replace with your actual values)
 PROJECT_ID="your_actual_project_id"           # Example: "1234567890abcdefghij"
-CONSOLE_URL="your_console_endpoint_url"       # Example: "mqtt.console.aitrios.com"
+CONSOLE_URL="your_mqtt_endpoint_url"          # Example: "mqtt.console.aitrios.com" (MQTT endpoint URL for AITRIOS Console)
 
 # 4. Set MQTT and platform parameters
 sudo python3 /var/lib/edge-device-core/update_psm_db.py --key PlStorageDataProjectID --value "${PROJECT_ID}" --db-file ${EDGE_DEVICE_CORE_DB_PATH}

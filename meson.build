@@ -119,6 +119,60 @@ subdir('src')
 evp_agent_dep = dependency('evp_agent', fallback : 'evp')
 evp_utils_dep = dependency('evp_utils')
 
+libpsm = shared_library(
+  'parameter_storage_manager',
+  sources: [
+		psm_sources,
+		esf_sources,
+		codec_sources,
+		pl_sources,
+		utility_sources,
+		hal_sources,
+		evp_agent_sources,
+		system_app_sources,
+	],
+  include_directories: [
+		hal_includes_public,
+		hal_includes_internal,
+		pl_includes_public,
+		pl_includes_internal,
+		utility_includes_public,
+		utility_includes_internal,
+		esf_includes_public,
+		esf_includes_internal,
+		codec_includes_public,
+		evp_agent_includes,
+		system_app_includes,
+		inc_senscord,
+	],
+	link_args: ['-lm','-export-dynamic'],
+	dependencies : [
+		sqlite3_dep,
+		parson_dep,
+		wamr_dep,
+		mbedtls_dep,
+		mbedcrypto_dep,
+		mbedx509_dep,
+		flatcc_dep,
+		base64_dep,
+		jpeg_dep,
+		parson_dep,
+		quirc_dep,
+		libnm_dep,
+		sensor_ai_lib_dep,
+		evp_agent_dep,
+		evp_utils_dep,
+		senscord_dep,
+		senscord_so_dep,
+	]+ (get_option('target') == 't4r' ? [libchrony_dep] : []),
+	c_args : [
+		systemapps_arguments,
+		senscord_arguments,
+	],
+	cpp_args : senscord_arguments,
+)
+libpsm_dep = declare_dependency(link_with: libpsm)
+
 edc = executable(
 	'edge_device_core',
 	[
@@ -154,6 +208,7 @@ edc = executable(
 		senscord_so_dep,
 		quirc_dep,
 		sqlite3_dep,
+		libpsm_dep
 	]+ (get_option('target') == 't4r' ? [libchrony_dep] : []),
 	c_args : systemapps_arguments,
     install_rpath: '/opt/senscord/lib',

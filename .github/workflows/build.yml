@@ -56,4 +56,6 @@ jobs:
           name: RPi_EDC
           if-no-files-found: error
           retention-days: 10
-          path: builddir/*.deb
+          path: |
+            builddir/*.deb
+            builddir/libparameter_storage_manager.so

@@ -66,6 +66,14 @@ sudo apt install -y ./senscord-edc-rpi*_arm64.deb
 sudo apt install -y ./edge-device-core*_arm64.deb
 ```
 
+3. **parameter storage manager package**<br>
+The "libparameter_storage_manager.so" file will be available at builddir/libparameter_storage_manager.so.
+Place the "libparameter_storage_manager.so" at "/usr/local/lib/".
+```bash
+sudo cp builddir/libparameter_storage_manager.so /usr/local/lib
+sudo ldconfig
+```
+
 ### Create sqlite3 database
 
 The edge-device-core package requires a SQLite database to store configuration. The package installation automatically creates the database at `/var/lib/edge-device-core/db.sqlite3`.

@@ -1,0 +1,29 @@
+commit baec24cb8a188f23f75b25e54812dbb87763de86
+Author: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+Date:   Wed Sep 10 01:27:56 2025 +0000
+
+    Implement change: Default hub type from EVP1 to EVP2 in get_hub_type()
+    
+    Co-authored-by: Ryota-Bando <206490475+Ryota-Bando@users.noreply.github.com>
+
+diff --git a/src/libevp-agent/evp_hub.c b/src/libevp-agent/evp_hub.c
+index 05dee04..5840e78 100644
+--- a/src/libevp-agent/evp_hub.c
++++ b/src/libevp-agent/evp_hub.c
+@@ -113,12 +113,12 @@ evp_hub_setup(const char *iot_platform)
+ enum evp_hub_type
+ get_hub_type(const char *iot_platform)
+ {
+-	/* Assume EVP1 TB by default, even for invalid 'iot_platform' */
+-	enum evp_hub_type hub_type = EVP_HUB_TYPE_EVP1_TB;
++	/* Assume EVP2 TB by default, even for invalid 'iot_platform' */
++	enum evp_hub_type hub_type = EVP_HUB_TYPE_EVP2_TB;
+ 
+ 	if (iot_platform != NULL) {
+-		if (strcasecmp(iot_platform, HUB_TB_NAME) == 0) {
+-			hub_type = EVP_HUB_TYPE_EVP2_TB;
++		if (strcasecmp(iot_platform, HUB_EVP1_NAME) == 0) {
++			hub_type = EVP_HUB_TYPE_EVP1_TB;
+ 		}
+ 	}
+ 

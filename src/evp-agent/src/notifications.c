@@ -9,12 +9,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include <evp/agent.h>
 #include <evp/sdk.h>
+#include <evp/agent_config.h>
 
+#include "system_manager.h"
+#include "led_manager.h"
+#include "esf.h"
 #include "notifications.h"
 #include "log.h"
 
@@ -471,6 +476,204 @@ elog_handler_network_error(const void *event, void *user_data)
 	return 0;
 }
 
+/* === Agent Status Handler Implementation === */
+
+#define PROVISIONING_SERVICE_URL "provision.aitrios.sony-semicon.com"
+
+typedef enum {
+    EvpAgentLedIndexConnectedWithTLS                ,
+    EvpAgentLedIndexConnectedWithoutTLS             ,
+    EvpAgentLedIndexDisconnectedConnectingWithTLS   ,
+    EvpAgentLedIndexDisconnectedConnectingWithoutTLS,
+    EvpAgentLedIndexMax
+} EvpAgentLedIndex;
+
+static bool
+is_tls_connection(void)
+{
+	return evp_agent_esf_is_tls_enabled();
+}
+
+static bool
+check_provisioning_service_mqtt_host(void)
+{
+	bool is_provisioning_service = false;
+	struct config *cfg;
+
+	cfg = evp_agent_esf_read_config(EVP_CONFIG_MQTT_HOST);
+	if (cfg != NULL) {
+		if (strcmp(cfg->value, PROVISIONING_SERVICE_URL) == 0) {
+			is_provisioning_service = true;
+		}
+		cfg->free(cfg);
+	}
+
+	return is_provisioning_service;
+}
+
+static bool
+check_project_id_and_register_token_valid(void)
+{
+	bool is_valid = false;
+	char *project_id = NULL;
+	char *register_token = NULL;
+	size_t size;
+	EsfSystemManagerResult sys_mgr_ret;
+
+	size = ESF_SYSTEM_MANAGER_PROJECT_ID_MAX_SIZE;
+	project_id = malloc(size);
+	if (project_id == NULL) {
+		SystemDlog(LOG_ERR, "agent_status", __FILE__, __LINE__,
+			   "failed to allocate memory for project_id");
+		goto end;
+	}
+	sys_mgr_ret = EsfSystemManagerGetProjectId(project_id, &size);
+	if (sys_mgr_ret != kEsfSystemManagerResultOk) {
+		SystemDlog(LOG_ERR, "agent_status", __FILE__, __LINE__,
+			   "EsfSystemManagerGetProjectId failed (%d)",
+			   (int)sys_mgr_ret);
+		goto end;
+	}
+
+	size = ESF_SYSTEM_MANAGER_REGISTER_TOKEN_MAX_SIZE;
+	register_token = malloc(size);
+	if (register_token == NULL) {
+		SystemDlog(LOG_ERR, "agent_status", __FILE__, __LINE__,
+			   "failed to allocate memory for register_token");
+		goto end;
+	}
+	sys_mgr_ret = EsfSystemManagerGetRegisterToken(register_token, &size);
+	if (sys_mgr_ret != kEsfSystemManagerResultOk) {
+		SystemDlog(LOG_ERR, "agent_status", __FILE__, __LINE__,
+			   "EsfSystemManagerGetRegisterToken failed (%d)",
+			   (int)sys_mgr_ret);
+		goto end;
+	}
+
+	if (project_id[0] != '\0' && register_token[0] != '\0') {
+		is_valid = true;
+	}
+
+end:
+	free(project_id);
+	free(register_token);
+
+	return is_valid;
+}
+
+static bool
+is_enrollment_mode(void)
+{
+	if (check_provisioning_service_mqtt_host()) {
+		/*
+		 * connecting to ProvisioningService
+		 * -> enrollment mode
+		 */
+		return true;
+	}
+
+	if (check_project_id_and_register_token_valid()) {
+		/*
+		 * Both of ProjectId and RegisterToken are set
+		 * -> enrollment mode
+		 */
+		return true;
+	}
+
+	/*
+	 * Not enrollment mode (connecting to console)
+	 */
+	return false;
+}
+
+/*
+ * Handler for agent connection status changes.
+ * Manages LED status based on agent connection state and TLS configuration.
+ * args: "connected" or "disconnected"
+ */
+int
+agent_status_handler(const void *args, void *user_data)
+{
+	if (args == NULL) {
+		SystemDlog(LOG_ERR, "agent_status", __FILE__, __LINE__,
+			   "%s: args is NULL", __func__);
+		return -1;
+	}
+
+	const char *agent_status = (const char *)args;
+	EsfLedManagerResult led_mgr_ret;
+	EsfLedManagerLedStatusInfo led_status[EvpAgentLedIndexMax];
+
+	for (int i = 0; i < EvpAgentLedIndexMax; i++) {
+		led_status[i].led = kEsfLedManagerTargetLedService;
+
+		switch (i) {
+		case EvpAgentLedIndexConnectedWithTLS:
+			led_status[i].status =
+				kEsfLedManagerLedStatusConnectedWithTLS;
+			break;
+		case EvpAgentLedIndexConnectedWithoutTLS:
+			led_status[i].status =
+				kEsfLedManagerLedStatusConnectedWithoutTLS;
+			break;
+		case EvpAgentLedIndexDisconnectedConnectingWithTLS:
+			led_status[i].status =
+				kEsfLedManagerLedStatusDisconnectedConnectingWithTLS;
+			break;
+		case EvpAgentLedIndexDisconnectedConnectingWithoutTLS:
+			led_status[i].status =
+				kEsfLedManagerLedStatusDisconnectedConnectingWithoutTLS;
+			break;
+		}
+		led_status[i].enabled = false;
+	}
+
+	if (strcmp(agent_status, "connected") == 0) {
+		if (is_enrollment_mode()) {
+			/*
+			 * Do nothing "connected" in enrollment mode
+			 */
+			return 0;
+		}
+
+		if (is_tls_connection()) {
+			led_status[EvpAgentLedIndexConnectedWithTLS].enabled =
+				true;
+		} else {
+			led_status[EvpAgentLedIndexConnectedWithoutTLS]
+				.enabled = true;
+		}
+	} else if (strcmp(agent_status, "disconnected") == 0) {
+		if (is_tls_connection()) {
+			led_status
+				[EvpAgentLedIndexDisconnectedConnectingWithTLS]
+					.enabled = true;
+		} else {
+			led_status
+				[EvpAgentLedIndexDisconnectedConnectingWithoutTLS]
+					.enabled = true;
+		}
+	} else {
+		SystemDlog(LOG_ERR, "agent_status", __FILE__, __LINE__,
+			   "%s: unknown agent/status: %s", __func__,
+			   agent_status);
+		return -1;
+	}
+
+	for (int i = 0; i < EvpAgentLedIndexMax; i++) {
+		led_mgr_ret = EsfLedManagerSetStatus(&led_status[i]);
+		if (led_mgr_ret != kEsfLedManagerSuccess) {
+			SystemDlog(LOG_ERR, "agent_status", __FILE__, __LINE__,
+				   "%s: EsfLedManagerSetStatus failed, result=%u "
+				   "status=%u",
+				   __func__, led_mgr_ret, led_status[i].status);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int evp_agent_notifications_register(struct evp_agent_context *ctxt)
 {
 	int ret = 0;
@@ -495,6 +698,14 @@ int evp_agent_notifications_register(struct evp_agent_context *ctxt)
 					       elog_handler_network_error, NULL);
 	if (ret) {
 		fprintf(stderr, "%s(): Failed to subscribe to network/error\n",
+			__func__);
+		return ret;
+	}
+
+	ret = evp_agent_notification_subscribe(ctxt, "agent/status",
+					       agent_status_handler, NULL);
+	if (ret) {
+		fprintf(stderr, "%s(): Failed to subscribe to agent/status\n",
 			__func__);
 		return ret;
 	}

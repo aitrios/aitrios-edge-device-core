@@ -234,6 +234,10 @@ static void *evp_agent_thread(void *data)
 	 */
 	struct evp_agent_context *ctxt = evp_agent_setup("evp_agent");
 
+	ret = agent_status_handler("disconnected", NULL);
+	if (ret)
+		goto out_free_evp_agent;
+
 	ret = evp_agent_esf_init_proxy_cache();
 	if (ret)
 		goto out_free_evp_agent;

@@ -205,14 +205,14 @@ class MyApp(object):
         input_text = f'insert or replace into psm_data values({self._key}, X\'{blob_data}\');'
         logger.debug(f'input_text: {input_text}')
 
-        cp = subprocess.run(['sqlite3', self._args.db_file], input=input_text, text=True,
+        cp = subprocess.run(['sqlite3', self._args.db_file], input=input_text.encode('utf-8'), text=False,
                             stdout=subprocess.PIPE)
         if cp.returncode != 0:
             logger.error(f'failed to update DB, return code: {cp.returncode}')
             return False
 
         if cp.stdout:
-            for line in cp.stdout.strip().splitlines():
+            for line in cp.stdout.decode('utf-8', errors='replace').strip().splitlines():
                 logger.info(f'{line}')
 
         return True
@@ -245,14 +245,15 @@ def show_db(db_file:Union[str,None]) -> bool:
     input_text = 'select key,value,typeof(value) from psm_data'
     logger.debug(f'input_text: {input_text}')
 
-    cp = subprocess.run(['sqlite3', db_file], input=input_text, text=True,
+    cp = subprocess.run(['sqlite3', db_file], input=input_text.encode('utf-8'), text=False,
                         stdout=subprocess.PIPE)
     if cp.returncode != 0:
         logger.error(f'failed to dump content of the DB file, return code: {cp.returncode}')
         return False
 
     if cp.stdout:
-        for line in cp.stdout.strip().splitlines():
+        # decode with errors='replace' to avoid UnicodeDecodeError
+        for line in cp.stdout.decode('utf-8', errors='replace').strip().splitlines():
             logger.info(f'{line}')
 
     return True
@@ -308,7 +309,7 @@ def check_sqlite3_exists() -> bool:
         logger.error('"sqlite3 --version" command failed')
         return False
 
-    version = cp.stdout.decode('utf-8').strip()
+    version = cp.stdout.decode('utf-8', errors='replace').strip()
     logger.debug(f'sqlite3 version: {version}')
 
     return True
@@ -317,14 +318,14 @@ def init_db(db_file:str) -> bool:
     input_text = 'create table if not exists psm_data (key integer primary key unique,value)'
     logger.debug(f'input_text: {input_text}')
 
-    cp = subprocess.run(['sqlite3', db_file], input=input_text, text=True,
+    cp = subprocess.run(['sqlite3', db_file], input=input_text.encode('utf-8'), text=False,
                         stdout=subprocess.PIPE)
     if cp.returncode != 0:
         logger.error(f'failed to initialize DB file, return code: {cp.returncode}')
         return False
 
     if cp.stdout:
-        for line in cp.stdout.strip().splitlines():
+        for line in cp.stdout.decode('utf-8', errors='replace').strip().splitlines():
             logger.info(f'{line}')
 
     return True

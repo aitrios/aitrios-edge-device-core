@@ -11,4 +11,7 @@ struct evp_agent_context;
 
 int evp_agent_notifications_register(struct evp_agent_context *ctxt);
 
+/* Agent status handler for LED management */
+int agent_status_handler(const void *args, void *user_data);
+
 #endif /* __NOTIFICATIONS_H__ */

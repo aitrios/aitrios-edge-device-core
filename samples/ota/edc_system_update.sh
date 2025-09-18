@@ -319,16 +319,16 @@ install_core_packages() {
         error_exit "Failed to extract core .deb package"
     fi
     
-    # Find the edge-device-core binary (typically in usr/bin)
+    # Find the edge_device_core binary (typically in usr/bin)
     local binary_path
-    binary_path=$(find "$extract_dir" -name "edge_device_core" -o -name "edge-device-core" -type f | head -1)
+    binary_path=$(find "$extract_dir" -name "edge_device_core" -type f | head -1)
     
     if [[ -z "$binary_path" ]]; then
         log_debug "Searching for any executable files..."
         find "$extract_dir" -type f -executable | head -10 | while read -r file; do
             log_debug "Found executable: $file"
         done
-        error_exit "Could not find edge-device-core binary in extracted package"
+        error_exit "Could not find edge_device_core binary in extracted package"
     fi
     
     log_debug "Found binary at: $binary_path"
@@ -348,8 +348,8 @@ install_core_packages() {
     log_debug "Found library at: $library_path"
     
     # Copy binary to target (rename if necessary)
-    cp "$binary_path" "$target_dir/bin/edge-device-core"
-    chmod +x "$target_dir/bin/edge-device-core"
+    cp "$binary_path" "$target_dir/bin/edge_device_core"
+    chmod +x "$target_dir/bin/edge_device_core"
     
     # Copy library to target (extracted from the same .deb package)
     cp "$library_path" "$target_dir/lib/libparameter_storage_manager.so"
@@ -380,7 +380,7 @@ validate_installation() {
     
     # Check required files exist
     local required_files=(
-        "$target_dir/bin/edge-device-core"
+        "$target_dir/bin/edge_device_core"
         "$target_dir/lib/libparameter_storage_manager.so"
     )
     
@@ -401,8 +401,8 @@ validate_installation() {
     log_debug "Found senscord content at: $senscord_target"
     
     # Check binary is executable
-    if [[ ! -x "$target_dir/bin/edge-device-core" ]]; then
-        error_exit "edge-device-core binary is not executable"
+    if [[ ! -x "$target_dir/bin/edge_device_core" ]]; then
+        error_exit "edge_device_core binary is not executable"
     fi
     
     log_info "Installation validation passed"

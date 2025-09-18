@@ -13,8 +13,8 @@ Environment="PATH=/opt/edc/opt/senscord/bin:/bin:/usr/bin:/usr/local/bin"
 
 
 # Use symbolic link to enable blue-green deployment
-ExecStartPre=/usr/bin/realpath /opt/edc/bin/edge-device-core
-ExecStart=/opt/edc/bin/edge-device-core
+ExecStartPre=/usr/bin/realpath /opt/edc/bin/edge_device_core
+ExecStart=/opt/edc/bin/edge_device_core
 Type=simple
 Restart=on-failure
 RestartSec=5

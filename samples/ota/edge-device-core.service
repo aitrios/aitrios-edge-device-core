@@ -1,0 +1,26 @@
+[Unit]
+Description=Edge Device Core Application
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+Environment="EDGE_DEVICE_CORE_DB_PATH=/var/lib/edge-device-core/db.sqlite3"
+Environment="LD_LIBRARY_PATH=/opt/edc/lib:/opt/edc/opt/senscord/lib:/opt/edc/opt/senscord/lib/senscord/utility:/opt/edc/opt/senscord/lib/aarch64-linux-gnu:/usr/lib/aarch64-linux-gnu"
+Environment="SENSCORD_INSTALL_PATH=/opt/edc/opt/senscord"
+Environment="SENSCORD_FILE_PATH=/opt/edc/opt/senscord/share/senscord/config:/opt/edc/opt/senscord/lib:/opt/edc/opt/senscord/lib/senscord/component:/opt/edc/opt/senscord/lib/senscord/allocator:/opt/edc/opt/senscord/lib/senscord/connection:/opt/edc/opt/senscord/lib/senscord/converter:/opt/edc/opt/senscord/lib/senscord/recoder:/opt/edc/opt/senscord/lib/senscord/extension"
+Environment="LD_PRELOAD=/opt/edc/opt/senscord/lib/rpicam_app_mod.so"
+Environment="PATH=/opt/edc/opt/senscord/bin:/bin:/usr/bin:/usr/local/bin"
+
+
+# Use symbolic link to enable blue-green deployment
+ExecStartPre=/usr/bin/realpath /opt/edc/bin/edge_device_core
+ExecStart=/opt/edc/bin/edge_device_core
+Type=simple
+Restart=on-failure
+RestartSec=5
+# Ensure proper permissions for edge device core operations
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

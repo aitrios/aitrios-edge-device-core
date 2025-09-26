@@ -217,3 +217,42 @@ SystemSendElog(void)
 	}
 	elog_unlock();
 }
+
+void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt, va_list ap, void *user)
+{
+	UtilityLogDlogLevel log_level;
+
+	// Convert EVP log level to UtilityLog level
+	switch (lvl)
+	{
+	case 0: // TRACE
+		log_level = kUtilityLogDlogLevelTrace;
+		break;
+	case 1: // DEBUG
+		log_level = kUtilityLogDlogLevelDebug;
+		break;
+	case 2: // INFO
+		log_level = kUtilityLogDlogLevelInfo;
+		break;
+	case 3: // WARNING
+		log_level = kUtilityLogDlogLevelWarn;
+		break;
+	case 4: // ERROR
+		log_level = kUtilityLogDlogLevelError;
+		break;
+	default: // FATAL (5 or higher)
+		log_level = kUtilityLogDlogLevelCritical;
+		break;
+	}
+
+	// Create log message with file and line information
+	char buf[256];  // Sufficient for normal filename + line + message
+	const char *filename = EVP_FILE_NAME(file);
+	int prefix_len = snprintf(buf, sizeof(buf), "[%s:%d] ", filename, line);
+	
+	// Add the actual log message
+	vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, ap);
+
+	// Output log using UtilityLogWriteDLog
+	UtilityLogWriteDLog(MODULE_ID_SYSTEM, log_level, "%s", buf);
+}

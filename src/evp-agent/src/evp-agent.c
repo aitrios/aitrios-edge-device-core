@@ -22,9 +22,13 @@ extern void wasm_add_native_lib(const char *);
 /* ESF Headers */
 #include "memory_manager.h"
 #include "power_manager.h"
+#include "system_manager.h"
+#include "utility_log.h"
+#include "utility_log_module_id.h"
 
 /* Local Headers */
 #include "esf.h"
+#include "log.h"
 #include "notifications.h"
 #include "sdk_backdoor.h"
 
@@ -39,7 +43,19 @@ static void evp_add_wasm_native_library(const char *fname);
 
 struct SYS_client;
 
-static struct {
+static void out_of_memory(const char *file, int line, const char *func, size_t size)
+{
+	// Output as Critical log using UtilityLogWriteDLog
+	UtilityLogWriteDLog(MODULE_ID_SYSTEM, kUtilityLogDlogLevelCritical,
+						"FATAL: Out of memory in %s() at %s:%d, requested %zu bytes - System will reboot",
+						func, file, line, size);
+
+	// Execute system reboot with EVP memory shortage specific reboot type
+	EsfSystemManagerExecReboot(kEsfSystemManagerRebootTypeEvpMemoryAllocFailure);
+}
+
+static struct
+{
 	struct evp_agent_context *ctxt;
 	enum {
 		EVP_AGENT_LOOP,
@@ -233,6 +249,20 @@ static void *evp_agent_thread(void *data)
 	 * call to exit()
 	 */
 	struct evp_agent_context *ctxt = evp_agent_setup("evp_agent");
+
+	// Register platform functions
+	struct evp_agent_platform platform = {
+		.dlog = evp_agent_dlog_handler,
+		.out_of_memory = out_of_memory,
+	};
+
+	ret = evp_agent_platform_register(ctxt, &platform);
+	if (ret)
+	{
+		UtilityLogWriteDLog(MODULE_ID_SYSTEM, kUtilityLogDlogLevelError,
+							"Failed to register platform: %d", ret);
+		goto out_free_evp_agent;
+	}
 
 	ret = agent_status_handler("disconnected", NULL);
 	if (ret)

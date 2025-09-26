@@ -8,12 +8,17 @@
 #define _SSF_ELOG_H__
 
 #include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
 #include <syslog.h>
 
 #define MAX_LOG_STR_LEN 4096
 #define MIN_LOG_STR_LEN 128
 
 #define ELOG_ERR 0xFF
+
+#define EVP_FILE_NAME(file) (strrchr(file, '/') ? strrchr(file, '/') + 1 : file)
+
 /*
  * Priority defined in syslog.h
  *
@@ -29,6 +34,8 @@
 
 void SystemDlog(int priority, const char *tag, const char *file, int line,
 		const char *fmt, ...);
+
+void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt, va_list ap, void *user);
 
 int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg);
 int SystemSetELog(uint8_t component, uint8_t code);

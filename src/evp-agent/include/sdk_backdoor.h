@@ -67,9 +67,8 @@ int EVP_undeployModules(void);
 
 /** @brief wrapper for wasm_runtime_register_natives
  */
-bool EVP_wasm_runtime_register_natives(const char *module_name,
-				       NativeSymbol *native_symbols,
-				       uint32_t n_native_symbols);
+bool EVP_wasm_runtime_register_natives(const char *module_name, NativeSymbol *native_symbols,
+                                       uint32_t n_native_symbols);
 
 #if defined(__cplusplus)
 } /* extern "C" */

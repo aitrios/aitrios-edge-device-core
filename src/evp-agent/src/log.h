@@ -32,10 +32,10 @@
  *LOG_DEBUG     :  Debug-level message
  */
 
-void SystemDlog(int priority, const char *tag, const char *file, int line,
-		const char *fmt, ...);
+void SystemDlog(int priority, const char *tag, const char *file, int line, const char *fmt, ...);
 
-void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt, va_list ap, void *user);
+void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt, va_list ap,
+                            void *user);
 
 int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg);
 int SystemSetELog(uint8_t component, uint8_t code);

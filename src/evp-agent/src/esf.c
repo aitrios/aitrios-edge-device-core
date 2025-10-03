@@ -25,6 +25,7 @@
 #include "system_manager.h"
 
 #include "esf.h"
+#include "log.h"
 
 #define MQTT_TLS_CLIENT_CERT_MAX_SIZE 32768
 #define MQTT_TLS_CLIENT_KEY_MAX_SIZE 4096
@@ -103,7 +104,7 @@ int evp_agent_esf_init_proxy_cache(void)
 	 */
     prm = malloc(sizeof(*prm));
     if (prm == NULL) {
-        fprintf(stderr, "failed to allocate memory for EsfNetworkManagerParameter");
+        EVP_AGENT_ERR("failed to allocate memory for EsfNetworkManagerParameter");
         ret = -ENOMEM;
         goto end;
     }
@@ -116,24 +117,26 @@ int evp_agent_esf_init_proxy_cache(void)
     mask.proxy.password = 1;
     ret = EsfNetworkManagerLoadParameter(&mask, prm);
     if (ret != kEsfNetworkManagerResultSuccess) {
-        fprintf(stderr, "EsfNetworkManagerLoadParameter failed (%u)", ret);
-        ret = false;
+        EVP_AGENT_ERR("EsfNetworkManagerLoadParameter failed (%u)", ret);
+        ret = -EIO;
         goto end;
     }
 
     if (prm->proxy.url[0] != '\0') {
         /* Save proxy host to cache */
         if (!(g_proxy_cache.host = strdup(prm->proxy.url))) {
-            fprintf(stderr, "failed to allocate memory for proxy url");
+            EVP_AGENT_ERR("failed to allocate memory for proxy url");
             ret = -ENOMEM;
             goto end;
         }
 
         /* Save proxy port to cache */
-        ret = snprintf(g_proxy_cache.port, sizeof(g_proxy_cache.port), "%d", prm->proxy.port);
+        int port_str_len = snprintf(g_proxy_cache.port, sizeof(g_proxy_cache.port), "%d",
+                                    prm->proxy.port);
 
-        if (ret < 0 || ret >= sizeof(g_proxy_cache.port)) {
-            fprintf(stderr, "snprintf(3) failed with %d", ret);
+        if (port_str_len < 0 || port_str_len >= sizeof(g_proxy_cache.port)) {
+            EVP_AGENT_ERR("snprintf(3) failed with %d", port_str_len);
+            ret = -ERANGE;
             goto end;
         }
     }
@@ -141,9 +144,7 @@ int evp_agent_esf_init_proxy_cache(void)
     if (prm->proxy.username[0] != '\0') {
         /* Save proxy username to cache */
         if (!(g_proxy_cache.username = strdup(prm->proxy.username))) {
-            fprintf(stderr,
-                    "failed to allocate memory for proxy "
-                    "username");
+            EVP_AGENT_ERR("failed to allocate memory for proxy username");
             ret = -ENOMEM;
             goto end;
         }
@@ -152,9 +153,7 @@ int evp_agent_esf_init_proxy_cache(void)
     if (prm->proxy.password[0] != '\0') {
         /* Save proxy password to cache */
         if (!(g_proxy_cache.password = strdup(prm->proxy.password))) {
-            fprintf(stderr,
-                    "failed to allocate memory for proxy "
-                    "password");
+            EVP_AGENT_ERR("failed to allocate memory for proxy password");
             ret = -ENOMEM;
             goto end;
         }

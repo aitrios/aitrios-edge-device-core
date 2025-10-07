@@ -9,7 +9,7 @@ url = https://github.com/SonySemiconductorSolutions/edge-virtualization-platform
 revision = tags/v1.48.1
 clone-recursive = false
 patch_directory = evp
-diff_files = evp/0001-Change-the-default-EVP-protocol-to-EVP2.patch
+diff_files = evp/0001-Change-the-default-EVP-protocol-to-EVP2.patch, evp/0002-fix-libevp-agent-sdkenc-build-dependency.patch
 
 [provide]
 dependency_names = evp

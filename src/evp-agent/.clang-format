@@ -1,0 +1,64 @@
+# Base configuration
+BasedOnStyle: Google
+
+# Line length limit - set to 100 characters for better readability
+ColumnLimit: 100
+
+# Indentation settings - 4 spaces for clear code structure
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Brace style - Stroustrup style for consistency
+BreakBeforeBraces: Stroustrup
+
+# Short syntax handling - enforce strict formatting
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: None
+
+# Function parameter packing
+BinPackParameters: true
+
+# Binary operator breaking
+BreakBeforeBinaryOperators: None
+
+# Preprocessor directives alignment
+IndentPPDirectives: None
+
+# Penalty settings for line breaking
+PenaltyBreakAssignment: 21
+PenaltyBreakBeforeFirstCallParameter: 19
+
+# Pointer and reference alignment
+PointerAlignment: Right
+
+# Comment formatting
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 1
+ReflowComments: false
+
+# Space settings
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesInAngles: false
+
+# Case label indentation
+IndentCaseLabels: true
+
+# Function name wrapping
+IndentWrappedFunctionNames: true
+
+# Escaped newlines alignment
+AlignEscapedNewlines: Left
+
+# Include sorting
+SortIncludes: false
+
+# Line ending settings
+DeriveLineEnding: true
+UseCRLF: false

@@ -1,0 +1,7 @@
+SUBSYSTEM=="i2c", ATTR{name}=="imx500", RUN+="/bin/sh -c '\
+    adapter_dir=$(dirname /sys/%p); \
+    adapter_node=/dev/$(basename \"$adapter_dir\"); \
+    if [ -c \"$adapter_node\" ]; then \
+        ln -sf \"$adapter_node\" /dev/i2c-imx500; \
+    fi; \
+'"

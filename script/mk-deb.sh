@@ -74,8 +74,12 @@ case "$debarch" in
     amd64)   LIBDIR="/usr/lib/x86_64-linux-gnu" ;;
     *) echo "Unsupported arch: $debarch" >&2; exit 1 ;;
 esac
+
 mkdir -p "${buildroot}/dist${LIBDIR}"
 cp "${buildroot}/libparameter_storage_manager.so" "${buildroot}/dist${LIBDIR}/"
+
+mkdir -p "${buildroot}/dist/etc/udev/rules.d/"
+install -m 644 "${MESON_SOURCE_ROOT}/udev/60-edc.rules" "${buildroot}/dist/etc/udev/rules.d/"
 
 # copy systemd service file
 mkdir -p "${buildroot}/dist/lib/systemd/system"
@@ -93,6 +97,17 @@ cp "${MESON_SOURCE_ROOT}/script/update_psm_db.py" "${buildroot}/dist/var/lib/edg
 cat > "${buildroot}/dist/DEBIAN/postinst" <<'EOF'
 #!/bin/bash
 set -e
+
+# Function to reload udev rules
+reload_udev_rules() {
+    if command -v udevadm >/dev/null 2>&1; then
+        echo "Reloading udev rules..."
+        udevadm control --reload-rules
+        udevadm trigger --subsystem-match=i2c
+    else
+        echo "Warning: udevadm not found, manual udev rules reload may be required"
+    fi
+}
 
 # Create required directories
 mkdir -p /var/lib/edge-device-core
@@ -130,6 +145,9 @@ if [ -f /var/lib/edge-device-core/update_psm_db.py ]; then
 else
     echo "Warning: update_psm_db.py not found, skipping database initialization" >&2
 fi
+
+# Reload udev rules and trigger
+reload_udev_rules
 
 # Reload systemd daemon and enable service
 if [ -d /run/systemd/system ]; then
@@ -169,6 +187,11 @@ if [ -d /run/systemd/system ]; then
     fi
 fi
 
+# Remove IMX500 device symlink if it exists
+if [ -L /dev/i2c-imx500 ]; then
+    rm -f /dev/i2c-imx500
+fi
+
 exit 0
 EOF
 
@@ -179,9 +202,23 @@ cat > "${buildroot}/dist/DEBIAN/postrm" <<'EOF'
 #!/bin/bash
 set -e
 
+# Function to reload udev rules
+reload_udev_rules() {
+    if command -v udevadm >/dev/null 2>&1; then
+        echo "Reloading udev rules..."
+        udevadm control --reload-rules
+        udevadm trigger --subsystem-match=i2c
+    else
+        echo "Warning: udevadm not found, manual udev rules reload may be required"
+    fi
+}
+
 if [ -d /run/systemd/system ]; then
     systemctl daemon-reload
 fi
+
+# Reload udev rules after package removal
+reload_udev_rules
 
 # Remove data directory on purge
 if [ "$1" = "purge" ]; then
@@ -189,6 +226,14 @@ if [ "$1" = "purge" ]; then
     rm -rf /var/lib/edge-device-core
     rm -rf /evp_data
     rm -rf /etc/evp
+
+    # Remove udev rules file on purge
+    if [ -f /etc/udev/rules.d/60-edc.rules ]; then
+        echo "Removing udev rules file..."
+        rm -f /etc/udev/rules.d/60-edc.rules
+        # Reload udev rules after removal
+        reload_udev_rules
+    fi
 fi
 
 exit 0

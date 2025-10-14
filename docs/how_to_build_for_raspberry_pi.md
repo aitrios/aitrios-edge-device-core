@@ -69,7 +69,7 @@ Transfer it to your Raspberry Pi and go to [How to use for Raspberry Pi](./how_t
 
 ```bash
 sudo apt install meson python3-kconfiglib libbsd-dev cmake libjpeg-dev \
-                 sqlite3 libsqlite3-dev libnm-dev
+                 sqlite3 libsqlite3-dev libnm-dev libopencv-dev
 ```
 
 ### 2. Download and install the senscord-edc-rpi package
@@ -79,9 +79,6 @@ Download the latest `senscord-edc-rpi_X.X.X_arm64.deb` from the [Releases page](
 Place the downloaded `.deb` file in the project root directory.
 
 ```bash
-sudo rm -f /var/cache/apt/archives/senscord-edc-rpi*_arm64.deb
-sudo mv senscord-edc-rpi*_arm64.deb /var/cache/apt/archives/
-cd /var/cache/apt/archives/
 sudo apt install ./senscord-edc-rpi*_arm64.deb
 ```
 

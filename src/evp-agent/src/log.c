@@ -26,8 +26,6 @@
 #define LOG_BUFFER_SIZE (4096)
 #define LOG_CHUNK_SIZE (256)
 
-static uint8_t err_count = 0;
-
 struct elog_entry {
     uint8_t component;
     uint8_t code;
@@ -109,17 +107,10 @@ void SystemDlog(int priority, const char *tag, const char *file, int line, const
             break;
     }
 
-    if (UtilityLogWriteDLog(MODULE_ID_SYSTEM, log_level, "[%s] %s-%d: %s\n", log_level_str, file,
-                            line, logstr) != kUtilityLogStatusOk) {
-        if (err_count < MAX_ERROR_COUNT) {
-            err_count++;
-            fprintf(stderr, "[%s] %s-%d: %s\n", "ERROR", file, line, logstr);
-        }
-    }
+    UtilityLogWriteDLog(MODULE_ID_SYSTEM, log_level, "[%s] %s-%d: %s\n", log_level_str, file, line,
+                        logstr);
 
-    if (max_logstr) {
-        free(max_logstr);
-    }
+    free(max_logstr);
 }
 
 int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg)

@@ -65,7 +65,7 @@ bool evp_agent_esf_is_tls_enabled(void)
 
     result = EsfSystemManagerGetEvpTls(&TlsData);
     if (result != kEsfSystemManagerResultOk) {
-        fprintf(stderr, "EsfSystemManagerGetEvpTls() failed\n");
+        EVP_AGENT_WARN("EsfSystemManagerGetEvpTls() failed, attempt to use TLS");
         return true;
     }
 
@@ -189,7 +189,7 @@ static int get_cert_key_path(enum config_key key, char **cert_key_path)
 
     dir = opendir(dir_path);
     if (!dir) {
-        fprintf(stderr, "Failed to open %s directory, errno=%d\n", dir_path, errno);
+        EVP_AGENT_ERR("Failed to open %s directory, errno=%d", dir_path, errno);
         ret = -EIO;
         goto end;
     }
@@ -197,7 +197,7 @@ static int get_cert_key_path(enum config_key key, char **cert_key_path)
     for (struct dirent *dp = readdir(dir); dp; dp = readdir(dir)) {
         if (strstr(dp->d_name, suffix)) {
             if (asprintf(cert_key_path, "%s/%s", dir_path, dp->d_name) == -1) {
-                fprintf(stderr, "asprintf failed\n");
+                EVP_AGENT_ERR("asprintf failed");
                 ret = -ENOMEM;
             }
             else {
@@ -209,7 +209,7 @@ static int get_cert_key_path(enum config_key key, char **cert_key_path)
     }
 
     if (ret == -ENOENT) {
-        fprintf(stderr, "Failed to found %s/*%s\n", dir_path, suffix);
+        EVP_AGENT_ERR("Failed to find %s/*%s", dir_path, suffix);
     }
 
 end:
@@ -225,20 +225,20 @@ static int read_cert_key(enum config_key key, char *buf, size_t buf_size)
 
     ret = get_cert_key_path(key, &cert_key_path);
     if (ret != 0) {
-        fprintf(stderr, "get_cert_key_path() failed");
+        EVP_AGENT_ERR("get_cert_key_path() failed");
         goto end;
     }
 
     fd = open(cert_key_path, O_RDONLY);
     if (fd < 0) {
-        fprintf(stderr, "failed to open %s, errno=%d\n", cert_key_path, errno);
+        EVP_AGENT_ERR("failed to open %s, errno=%d", cert_key_path, errno);
         ret = -EIO;
         goto end;
     }
 
     ssize_t nread = read(fd, buf, buf_size - 1);
     if (nread <= 0) {
-        fprintf(stderr, "failed to read from %s, nread=%zd errno=%d", cert_key_path, nread, errno);
+        EVP_AGENT_ERR("failed to read from %s, nread=%zd errno=%d", cert_key_path, nread, errno);
         ret = -EIO;
         goto end;
     }
@@ -262,14 +262,14 @@ struct config *evp_agent_esf_read_config(enum config_key key)
     struct config *config = NULL;
 
     if (key >= __arraycount(g_max_sizes)) {
-        fprintf(stderr, "No known size for key\n");
+        EVP_AGENT_ERR("No known size for key");
         return NULL;
     }
 
     max_size = g_max_sizes[key];
     buf = malloc(max_size + 1);
     if (!buf) {
-        fprintf(stderr, "Failed to allocate memory buffer for config\n");
+        EVP_AGENT_ERR("Failed to allocate memory buffer for config");
         return NULL;
     }
 
@@ -320,35 +320,35 @@ struct config *evp_agent_esf_read_config(enum config_key key)
         case EVP_CONFIG_HTTPS_CA_CERT:
             sys_mgr_ret = EsfSystemManagerGetRootCa(buf, &max_size);
             if (sys_mgr_ret != kEsfSystemManagerResultOk) {
-                fprintf(stderr, "EsfSystemManagerGetRootCa() failed\n");
+                EVP_AGENT_ERR("EsfSystemManagerGetRootCa() failed");
                 is_success = false;
             }
             break;
         case EVP_CONFIG_MQTT_HOST:
             sys_mgr_ret = EsfSystemManagerGetEvpHubUrl(buf, &max_size);
             if (sys_mgr_ret != kEsfSystemManagerResultOk) {
-                fprintf(stderr, "EsfSystemManagerGetEvpHubUrl() failed\n");
+                EVP_AGENT_ERR("EsfSystemManagerGetEvpHubUrl() failed");
                 is_success = false;
             }
             break;
         case EVP_CONFIG_MQTT_PORT:
             sys_mgr_ret = EsfSystemManagerGetEvpHubPort(buf, &max_size);
             if (sys_mgr_ret != kEsfSystemManagerResultOk) {
-                fprintf(stderr, "EsfSystemManagerGetEvpHubPort() failed\n");
+                EVP_AGENT_ERR("EsfSystemManagerGetEvpHubPort() failed");
                 is_success = false;
             }
             break;
         case EVP_CONFIG_IOT_PLATFORM:
             sys_mgr_ret = EsfSystemManagerGetEvpIotPlatform(buf, &max_size);
             if (sys_mgr_ret != kEsfSystemManagerResultOk) {
-                fprintf(stderr, "EsfSystemManagerGetEvpIotPlatform() failed\n");
+                EVP_AGENT_ERR("EsfSystemManagerGetEvpIotPlatform() failed");
                 is_success = false;
             }
             break;
         case EVP_CONFIG_MQTT_TLS_CLIENT_CERT:
         case EVP_CONFIG_MQTT_TLS_CLIENT_KEY:
             if (read_cert_key(key, buf, max_size + 1) != 0) {
-                fprintf(stderr, "read_cert_key() failed\n");
+                EVP_AGENT_ERR("read_cert_key() failed");
                 is_success = false;
             }
             break;
@@ -363,7 +363,7 @@ struct config *evp_agent_esf_read_config(enum config_key key)
 
     config = malloc(sizeof(*config));
     if (!config) {
-        fprintf(stderr, "Failed to allocate memory for config struct\n");
+        EVP_AGENT_ERR("Failed to allocate memory for config struct");
         free(buf);
         return NULL;
     }

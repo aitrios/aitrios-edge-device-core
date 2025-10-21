@@ -115,7 +115,7 @@ static int elog_handler_blob_success(void)
 
     ret = SystemSetELog(ELOG_EVP_BLOB_NETWORK_STATUS, code);
     if (ret < 0) {
-        fprintf(stdout, "failed to handle mqtt result:%d\n", ret);
+        EVP_AGENT_ERR("Failed to send ELOG: %d", ret);
     }
 
     return 0;
@@ -178,7 +178,7 @@ static int elog_handler_blob_http_error(unsigned int status)
     code = ((tmp & 0xFC) | (code & 0x3));
     ret = SystemSetELog(ELOG_EVP_BLOB_NETWORK_STATUS, code);
     if (ret < 0) {
-        fprintf(stderr, "Failed to set ELOG: %d\n", ret);
+        EVP_AGENT_ERR("Failed to send ELOG: %d", ret);
     }
 
     return ret;
@@ -270,15 +270,16 @@ static int check_sys_time(void)
 
     int rv = clock_gettime(CLOCK_REALTIME, &tp);
     if (rv != 0) {
-        fprintf(stdout, "could not get time information");
+        EVP_AGENT_ERR("Failed to get system time: %d", rv);
         is_invalid_time = true;
     }
     else {
         struct tm ltime = {0};
         localtime_r(&tp.tv_sec, &ltime);
         if (ltime.tm_year + 1900 <= 2000) {
-            fprintf(stdout, "year <= 2000. %04d/%02d/%02d %02d:%02d:%02d", ltime.tm_year + 1900,
-                    ltime.tm_mon + 1, ltime.tm_mday, ltime.tm_hour, ltime.tm_min, ltime.tm_sec);
+            EVP_AGENT_ERR("year <= 2000. %04d/%02d/%02d %02d:%02d:%02d", ltime.tm_year + 1900,
+                          ltime.tm_mon + 1, ltime.tm_mday, ltime.tm_hour, ltime.tm_min,
+                          ltime.tm_sec);
             is_invalid_time = true;
         }
     }
@@ -323,8 +324,6 @@ static int elog_handler_mqtt_sync_success(const void *event, void *user_data)
         mqtt_code &= ~INVALID_TIME_MASK;
     }
 
-    fprintf(stdout, "mqtt_code =0x%x", mqtt_code);
-
     /* set field of tcp_timer error flag */
     if (g_tcp_timer_error_timeout) {
         blob_network_code |= 0x2;
@@ -343,10 +342,7 @@ static int elog_handler_mqtt_sync_success(const void *event, void *user_data)
     SystemSetELog(ELOG_EVP_MQTT_STATUS, mqtt_code);
     SystemSetELog(ELOG_EVP_BLOB_NETWORK_STATUS, blob_network_code);
 
-    fprintf(stdout,
-            "MQTT SYNC SUCCESS Update ELOG blob_network_code:%x "
-            "mqtt_code:%x\n",
-            blob_network_code, mqtt_code);
+    EVP_AGENT_INFO("Update ELOG mqtt_code:%x blob_network_code:%x", mqtt_code, blob_network_code);
 
     return 0;
 }
@@ -356,7 +352,7 @@ static int elog_handler_mqtt_sync_fail(const void *event, void *user_data)
     int ret = 0;
     uint8_t mqtt_code = SystemGetELog(ELOG_EVP_MQTT_STATUS);
     if (mqtt_code == ELOG_ERR) {
-        fprintf(stderr, "Failed to get ELOG ELOG_EVP_MQTT_STATUS");
+        EVP_AGENT_ERR("Failed to get ELOG_EVP_MQTT_STATUS");
         return -EINVAL;
     }
 
@@ -392,10 +388,7 @@ static int elog_handler_mqtt_sync_fail(const void *event, void *user_data)
 
         ret = SystemSetELog(ELOG_EVP_MQTT_STATUS, mqtt_code);
         if (ret < 0) {
-            fprintf(stderr,
-                    "Failed to set ELOG ELOG_EVP_MQTT_STATUS: "
-                    "%d\n",
-                    ret);
+            EVP_AGENT_ERR("Failed to send ELOG_EVP_MQTT_STATUS: %d", ret);
         }
     }
 
@@ -435,7 +428,7 @@ static int elog_handler_mqtt_sync_result(const void *event, void *user_data)
     }
 
     if (ret < 0) {
-        fprintf(stdout, "failed to handle mqtt result:%d\n", ret);
+        EVP_AGENT_ERR("failed to elog_handler_mqtt_sync result:%d", ret);
     }
 
     /* Only for elog issue, no need to return failure to wedge-agent */
@@ -459,7 +452,7 @@ static int elog_handler_network_error(const void *event, void *user_data)
 
     ret = SystemSetELog(ELOG_EVP_BLOB_NETWORK_STATUS, blob_network_code);
     if (ret < 0) {
-        fprintf(stdout, "failed to handle mqtt result:%d\n", ret);
+        EVP_AGENT_ERR("Failed to send ELOG: %d", ret);
     }
 
     return 0;
@@ -654,26 +647,26 @@ int evp_agent_notifications_register(struct evp_agent_context *ctxt)
 
     ret = evp_agent_notification_subscribe(ctxt, "blob/result", elog_handler_blob_result, NULL);
     if (ret) {
-        fprintf(stderr, "%s(): Failed to subscribe to blob/result\n", __func__);
+        EVP_AGENT_ERR("Failed to subscribe to blob/result");
         return ret;
     }
 
     ret = evp_agent_notification_subscribe(ctxt, "mqtt/sync/err", elog_handler_mqtt_sync_result,
                                            NULL);
     if (ret) {
-        fprintf(stderr, "%s(): Failed to subscribe to mqtt/sync/err\n", __func__);
+        EVP_AGENT_ERR("Failed to subscribe to mqtt/sync/err");
         return ret;
     }
 
     ret = evp_agent_notification_subscribe(ctxt, "network/error", elog_handler_network_error, NULL);
     if (ret) {
-        fprintf(stderr, "%s(): Failed to subscribe to network/error\n", __func__);
+        EVP_AGENT_ERR("Failed to subscribe to network/error");
         return ret;
     }
 
     ret = evp_agent_notification_subscribe(ctxt, "agent/status", agent_status_handler, NULL);
     if (ret) {
-        fprintf(stderr, "%s(): Failed to subscribe to agent/status\n", __func__);
+        EVP_AGENT_ERR("Failed to subscribe to agent/status");
         return ret;
     }
 

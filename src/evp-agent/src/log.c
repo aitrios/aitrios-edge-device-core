@@ -23,6 +23,9 @@
     LOG_COLOR_##letter #letter " (%d) %s-%s-%d: %s" LOG_RESET_COLOR "\n"
 
 #define MAX_ERROR_COUNT (10)
+#define LOG_BUFFER_SIZE (4096)
+#define LOG_CHUNK_SIZE (256)
+
 static uint8_t err_count = 0;
 
 struct elog_entry {
@@ -231,14 +234,65 @@ void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt
             break;
     }
 
-    // Create log message with file and line information
-    char buf[256]; // Sufficient for normal filename + line + message
+    // Calculate required buffer size
     const char *filename = EVP_FILE_NAME(file);
-    int prefix_len = snprintf(buf, sizeof(buf), "[%s:%d] ", filename, line);
+    int prefix_len = snprintf(NULL, 0, "[%s:%d] ", filename, line);
 
-    // Add the actual log message
-    vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, ap);
+    va_list ap_copy;
+    va_copy(ap_copy, ap);
+    int message_len = vsnprintf(NULL, 0, fmt, ap_copy);
+    va_end(ap_copy);
 
-    // Output log using UtilityLogWriteDLog
-    UtilityLogWriteDLog(MODULE_ID_SYSTEM, log_level, "%s", buf);
+    // Check for snprintf errors
+    if (prefix_len < 0 || message_len < 0) {
+        EVP_AGENT_ERR("Log formatting error (vsnprintf failed)");
+        return;
+    }
+
+    int total_len = prefix_len + message_len + 1; // +1 for null terminator
+    char *buf = NULL;
+    int buffer_size = total_len;
+    bool log_truncated = false;
+
+    if (total_len > LOG_BUFFER_SIZE) {
+        buffer_size = LOG_BUFFER_SIZE;
+        log_truncated = true;
+    }
+
+    buf = malloc(buffer_size);
+
+    // check for malloc failure
+    if (buf == NULL) {
+        EVP_AGENT_ERR("Memory allocation failed");
+        return;
+    }
+
+    // Create Log message
+    if (vsnprintf(buf, buffer_size, fmt, ap) < 0) {
+        EVP_AGENT_ERR("Log formatting error (vsnprintf failed)");
+        free(buf);
+        return;
+    }
+
+    int buf_len = strlen(buf);
+
+    // Output log in chunks
+    for (int i = 0; i < buf_len; i += LOG_CHUNK_SIZE) {
+        int remaining = buf_len - i;
+        int chunk_len = (remaining > LOG_CHUNK_SIZE) ? LOG_CHUNK_SIZE : remaining;
+
+        UtilityLogWriteDLog(MODULE_ID_SYSTEM, log_level, "[%s:%d] %.*s", filename, line, chunk_len,
+                            buf + i);
+    }
+
+    // Send DLOG message if log was truncated due to buffer size limit
+    if (log_truncated) {
+        UtilityLogWriteDLog(MODULE_ID_SYSTEM, log_level,
+                            "[%s:%d] Log message truncated: message size %d bytes, buffer size "
+                            "%d bytes, truncated %d bytes",
+                            filename, line, total_len, LOG_BUFFER_SIZE,
+                            total_len - LOG_BUFFER_SIZE);
+    }
+
+    free(buf);
 }

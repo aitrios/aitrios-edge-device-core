@@ -32,12 +32,9 @@ sudo reboot
 ```bash
 # Remove previous edge-device-core
 sudo apt purge -y edge-device-core
-sudo apt clean
-sudo rm -rf /usr/bin/edge_device_core
 
 # Remove previous senscord-edc-rpi
 sudo apt purge -y senscord-edc-rpi
-sudo apt clean
 sudo rm -rf /opt/senscord
 ```
 

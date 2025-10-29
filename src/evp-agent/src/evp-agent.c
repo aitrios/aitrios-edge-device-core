@@ -155,21 +155,21 @@ static int evp_agent_wasm_native_symbol_add(const char *module_name, NativeSymbo
                                             uint32_t n_native_symbols)
 {
     if (module_name == NULL) {
-        fprintf(stderr, "module_name is NULL");
+        EVP_AGENT_ERR("module_name is NULL");
         return -EINVAL;
     }
     if (native_symbols == NULL) {
-        fprintf(stderr, "native_symbols is NULL");
+        EVP_AGENT_ERR("native_symbols is NULL");
         return -EINVAL;
     }
     if (n_native_symbols == 0) {
-        fprintf(stderr, "n_native_symbols is 0");
+        EVP_AGENT_ERR("n_native_symbols is 0");
         return -EINVAL;
     }
 
     struct native_symbol_entry *entry = malloc(sizeof(struct native_symbol_entry));
     if (entry == NULL) {
-        fprintf(stderr, "failed to allocate memory for native_symbol_entry");
+        EVP_AGENT_ERR("failed to allocate memory for native_symbol_entry");
         return -ENOMEM;
     }
 
@@ -190,7 +190,7 @@ bool EVP_wasm_runtime_register_natives(const char *module_name, NativeSymbol *na
     int ret;
 
     if (g_evp_agent.started) {
-        fprintf(stderr, "EVP Agent has already started\n");
+        EVP_AGENT_ERR("EVP Agent has already started");
         return false;
     }
 
@@ -211,7 +211,7 @@ static int evp_agent_flush_wasm_native_symbols()
         if (!ret) {
             if (!wasm_runtime_register_natives(entry->module_name, entry->native_symbols,
                                                entry->n_native_symbols)) {
-                fprintf(stderr, "Failed to register native symbols\n");
+                EVP_AGENT_ERR("Failed to register native symbols");
                 ret = -1;
             }
         }
@@ -232,7 +232,7 @@ static void *evp_agent_thread(void *data)
 
     ret = pthread_setname_np(pthread_self(), "EVP Agent");
     if (ret) {
-        fprintf(stderr, "%s(): failed to set threadname\n", __func__);
+        EVP_AGENT_ERR("failed to set threadname");
         g_evp_agent.ret = ret;
         pthread_exit(&g_evp_agent.ret);
     }
@@ -289,7 +289,7 @@ static void *evp_agent_thread(void *data)
     while (ret == 0) {
         wdt_err = EsfPwrMgrSwWdtKeepalive(EVP_SW_WDT_ID);
         if (wdt_err != kEsfPwrMgrOk) {
-            fprintf(stderr, "%s(): EsfPwrMgrSwWdtKeepalive failed: %d\n", __func__, wdt_err);
+            EVP_AGENT_ERR("EsfPwrMgrSwWdtKeepalive failed: %d", wdt_err);
         }
         ret = evp_agent_loop(ctxt);
         if (g_evp_agent.signalled) {
@@ -299,7 +299,7 @@ static void *evp_agent_thread(void *data)
 
     wdt_err = EsfPwrMgrSwWdtStop(EVP_SW_WDT_ID);
     if (wdt_err != kEsfPwrMgrOk) {
-        fprintf(stderr, "%s(): EsfPwrMgrSwWdtStop failed: %d\n", __func__, wdt_err);
+        EVP_AGENT_ERR("EsfPwrMgrSwWdtStop failed: %d", wdt_err);
     }
 
 out_disconnect_evp_agent:
@@ -326,9 +326,7 @@ static void evp_add_wasm_native_library(const char *fname)
 {
 #if !defined(CONFIG_EVP_MODULE_IMPL_WASM)
     // Exit (xlog_abort): runtime error
-    fprintf(stderr,
-            "command line dynamic libraries is only enabled with wasm "
-            "module implementation");
+    EVP_AGENT_ERR("command line dynamic libraries is only enabled with wasm module implementation");
 #else
     wasm_add_native_lib(fname);
 #endif

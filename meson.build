@@ -5,7 +5,7 @@
 project(
 	'edge device core',
 	'c', 'cpp',
-	version : '0.2.5',
+	version : '0.2.6',
 )
 cc = meson.get_compiler('c')
 if meson.is_cross_build()
@@ -75,9 +75,10 @@ sqlite3_dep = dependency('sqlite3')
 # likewise libnm, which comes from libnm-dev and has a package config file
 libnm_dep = dependency('libnm')
 
-# libchrony
+# libchrony, vsclient for t4r target
 if get_option('target') == 't4r'
   libchrony_dep = dependency('libchrony')
+  vsclient_dep = cc.find_library('vsclient', required : true)
 endif
 
 if meson.is_cross_build()
@@ -163,7 +164,7 @@ libpsm = shared_library(
 		evp_utils_dep,
 		senscord_dep,
 		senscord_so_dep,
-	]+ (get_option('target') == 't4r' ? [libchrony_dep] : []),
+	]+ (get_option('target') == 't4r' ? [libchrony_dep, vsclient_dep] : []),
 	c_args : [
 		systemapps_arguments,
 		senscord_arguments,
@@ -208,7 +209,7 @@ edc = executable(
 		quirc_dep,
 		sqlite3_dep,
 		libpsm_dep
-	]+ (get_option('target') == 't4r' ? [libchrony_dep] : []),
+	]+ (get_option('target') == 't4r' ? [libchrony_dep, vsclient_dep] : []),
 	c_args : systemapps_arguments,
     install_rpath: '/opt/senscord/lib',
     link_args: ['-lm','-export-dynamic']

@@ -340,10 +340,6 @@ int evp_agent_startup()
     if (ret)
         return ret;
 
-    ret = pthread_setname_np(g_evp_agent.thread, "evp-agent");
-    if (ret)
-        goto err_join_thread;
-
     evp_add_wasm_native_library(LIB_SENSCORD_WAMR_SO);
 
     return 0;

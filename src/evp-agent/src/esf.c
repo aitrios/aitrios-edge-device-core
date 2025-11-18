@@ -212,9 +212,9 @@ static int get_cert_key_path(enum config_key key, char **cert_key_path)
         EVP_AGENT_ERR("Failed to find %s/*%s", dir_path, suffix);
     }
 
-end:
     closedir(dir);
 
+end:
     return ret;
 }
 

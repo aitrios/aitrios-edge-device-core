@@ -485,6 +485,7 @@ static bool check_provisioning_service_mqtt_host(void)
         if (strcmp(cfg->value, PROVISIONING_SERVICE_URL) == 0) {
             is_provisioning_service = true;
         }
+        cfg->free(cfg->value);
         cfg->free(cfg);
     }
 

@@ -62,6 +62,5 @@ void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt
 int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg);
 int SystemSetELog(uint8_t component, uint8_t code);
 uint8_t SystemGetELog(uint8_t component);
-void SystemSendElog(void);
 
 #endif /* _SSF_ELOG_H__ */

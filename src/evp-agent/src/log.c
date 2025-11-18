@@ -177,27 +177,6 @@ uint8_t SystemGetELog(uint8_t component)
     return code;
 }
 
-void SystemSendElog(void)
-{
-    int i;
-
-    elog_lock();
-    for (i = 0; i < ELOG_ARRAY_SIZE; i++) {
-        struct elog_entry *entry = &elog_array[i];
-
-        if (entry->updated) {
-            SystemDlog(LOG_DEBUG, "ELOG", __func__, __LINE__,
-                       "component: %x, code: %x  updated: %s, "
-                       "msg:%s \n",
-                       entry->component, entry->code, entry->updated ? "true" : "false",
-                       entry->msg);
-
-            entry->updated = false;
-        }
-    }
-    elog_unlock();
-}
-
 void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt, va_list ap,
                             void *user)
 {

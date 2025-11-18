@@ -17,7 +17,6 @@ set (WAMR_BUILD_WASI_NN_ONNXRUNTIME 1)
 set (WAMR_BUILD_DUMP_CALL_STACK 1)
 # Disable OpenCV to avoid cross-compilation complexity
 set (WAMR_BUILD_WASI_NN_OPENCV OFF)
-set (CMAKE_BUILD_TYPE Debug)
 set (CMAKE_C_FLAGS "-DAPP_THREAD_STACK_SIZE_DEFAULT=4194304 -DAPP_THREAD_STACK_SIZE_MIN=4194304")
 include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
 add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})

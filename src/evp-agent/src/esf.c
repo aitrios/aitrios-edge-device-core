@@ -267,7 +267,7 @@ struct config *evp_agent_esf_read_config(enum config_key key)
     }
 
     max_size = g_max_sizes[key];
-    buf = malloc(max_size + 1);
+    buf = calloc(1, max_size + 1);
     if (!buf) {
         EVP_AGENT_ERR("Failed to allocate memory buffer for config");
         return NULL;

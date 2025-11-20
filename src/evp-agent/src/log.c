@@ -113,10 +113,8 @@ void SystemDlog(int priority, const char *tag, const char *file, int line, const
     free(max_logstr);
 }
 
-int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg)
+void SystemRegElog(uint8_t component, uint8_t init_value, const char *msg)
 {
-    int ret = 0;
-
     elog_lock();
     if (last < MAX_ELOG_ENTRY) {
         elog_array[last].component = component;
@@ -126,11 +124,9 @@ int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg)
         last++;
     }
     else {
-        ret = -ENOMEM;
+        EVP_AGENT_WARN("Elog array is full. Cannot register component: 0x%x", component);
     }
     elog_unlock();
-
-    return ret;
 }
 
 int SystemSetELog(uint8_t component, uint8_t code)

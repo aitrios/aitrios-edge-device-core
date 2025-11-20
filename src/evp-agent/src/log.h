@@ -59,7 +59,7 @@ void SystemDlog(int priority, const char *tag, const char *file, int line, const
 void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt, va_list ap,
                             void *user);
 
-int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg);
+void SystemRegElog(uint8_t component, uint8_t init_value, const char *msg);
 int SystemSetELog(uint8_t component, uint8_t code);
 uint8_t SystemGetELog(uint8_t component);
 

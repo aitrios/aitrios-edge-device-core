@@ -287,7 +287,7 @@ struct config *evp_agent_esf_read_config(enum config_key key)
             break;
         case EVP_CONFIG_MQTT_PROXY_PORT:
         case EVP_CONFIG_HTTP_PROXY_PORT:
-            if (g_proxy_cache.port != NULL) {
+            if (g_proxy_cache.port[0] != '\0') {
                 strncpy(buf, g_proxy_cache.port, max_size);
                 buf[max_size - 1] = '\0';
             }

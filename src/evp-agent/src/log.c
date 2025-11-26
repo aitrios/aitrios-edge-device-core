@@ -113,10 +113,8 @@ void SystemDlog(int priority, const char *tag, const char *file, int line, const
     free(max_logstr);
 }
 
-int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg)
+void SystemRegElog(uint8_t component, uint8_t init_value, const char *msg)
 {
-    int ret = 0;
-
     elog_lock();
     if (last < MAX_ELOG_ENTRY) {
         elog_array[last].component = component;
@@ -126,11 +124,9 @@ int SystemRegElog(uint8_t component, uint8_t init_value, const char *msg)
         last++;
     }
     else {
-        ret = -ENOMEM;
+        EVP_AGENT_WARN("Elog array is full. Cannot register component: 0x%x", component);
     }
     elog_unlock();
-
-    return ret;
 }
 
 int SystemSetELog(uint8_t component, uint8_t code)
@@ -175,27 +171,6 @@ uint8_t SystemGetELog(uint8_t component)
     elog_unlock();
 
     return code;
-}
-
-void SystemSendElog(void)
-{
-    int i;
-
-    elog_lock();
-    for (i = 0; i < ELOG_ARRAY_SIZE; i++) {
-        struct elog_entry *entry = &elog_array[i];
-
-        if (entry->updated) {
-            SystemDlog(LOG_DEBUG, "ELOG", __func__, __LINE__,
-                       "component: %x, code: %x  updated: %s, "
-                       "msg:%s \n",
-                       entry->component, entry->code, entry->updated ? "true" : "false",
-                       entry->msg);
-
-            entry->updated = false;
-        }
-    }
-    elog_unlock();
 }
 
 void evp_agent_dlog_handler(int lvl, const char *file, int line, const char *fmt, va_list ap,

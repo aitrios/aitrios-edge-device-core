@@ -212,9 +212,9 @@ static int get_cert_key_path(enum config_key key, char **cert_key_path)
         EVP_AGENT_ERR("Failed to find %s/*%s", dir_path, suffix);
     }
 
-end:
     closedir(dir);
 
+end:
     return ret;
 }
 
@@ -267,7 +267,7 @@ struct config *evp_agent_esf_read_config(enum config_key key)
     }
 
     max_size = g_max_sizes[key];
-    buf = malloc(max_size + 1);
+    buf = calloc(1, max_size + 1);
     if (!buf) {
         EVP_AGENT_ERR("Failed to allocate memory buffer for config");
         return NULL;
@@ -287,7 +287,7 @@ struct config *evp_agent_esf_read_config(enum config_key key)
             break;
         case EVP_CONFIG_MQTT_PROXY_PORT:
         case EVP_CONFIG_HTTP_PROXY_PORT:
-            if (g_proxy_cache.port != NULL) {
+            if (g_proxy_cache.port[0] != '\0') {
                 strncpy(buf, g_proxy_cache.port, max_size);
                 buf[max_size - 1] = '\0';
             }

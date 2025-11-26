@@ -485,6 +485,7 @@ static bool check_provisioning_service_mqtt_host(void)
         if (strcmp(cfg->value, PROVISIONING_SERVICE_URL) == 0) {
             is_provisioning_service = true;
         }
+        cfg->free(cfg->value);
         cfg->free(cfg);
     }
 
@@ -644,6 +645,10 @@ int agent_status_handler(const void *args, void *user_data)
 int evp_agent_notifications_register(struct evp_agent_context *ctxt)
 {
     int ret = 0;
+
+    SystemRegElog(ELOG_EVP_BLOB_NETWORK_STATUS, 0x40, "EVP Block Warning.");
+    SystemRegElog(ELOG_EVP_MQTT_STATUS, 0x0, "EVP Block Warning 2.");
+    SystemRegElog(ELOG_EVP_WASM_STATUS, 0x0, "EVP Block Warning 3.");
 
     ret = evp_agent_notification_subscribe(ctxt, "blob/result", elog_handler_blob_result, NULL);
     if (ret) {

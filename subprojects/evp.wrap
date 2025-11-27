@@ -6,10 +6,9 @@
 description = Edge Virtualization Platform
 directory = evp
 url = https://github.com/SonySemiconductorSolutions/edge-virtualization-platform.git
-revision = tags/v1.48.1
+revision = tags/v1.48.4
 clone-recursive = false
 patch_directory = evp
-diff_files = evp/0001-Change-the-default-EVP-protocol-to-EVP2.patch, evp/0002-fix-libevp-agent-sdkenc-build-dependency.patch
 
 [provide]
 dependency_names = evp

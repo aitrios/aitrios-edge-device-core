@@ -194,6 +194,7 @@ evp_agent = static_library(
 		mbedx509_dep,
 		parson_dep,
 		wamr_dep,
+		sdkenc_dep,
 	]
 )
 

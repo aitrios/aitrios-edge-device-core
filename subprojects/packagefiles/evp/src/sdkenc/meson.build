@@ -31,3 +31,7 @@ else
 		build_by_default : true,
 	)
 endif
+
+sdkenc_dep = declare_dependency(
+	sources : sdkenc_headers
+)

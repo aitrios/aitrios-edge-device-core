@@ -5,7 +5,7 @@
 project(
 	'edge device core',
 	'c', 'cpp',
-	version : '0.3.4',
+	version : '0.3.5',
 )
 cc = meson.get_compiler('c')
 if meson.is_cross_build()

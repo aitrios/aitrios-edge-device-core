@@ -6,7 +6,7 @@
 description = Edge Virtualization Platform
 directory = evp
 url = https://github.com/SonySemiconductorSolutions/edge-virtualization-platform.git
-revision = tags/v1.48.4
+revision = tags/v1.48.5
 clone-recursive = false
 patch_directory = evp
 

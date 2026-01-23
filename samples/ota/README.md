@@ -80,21 +80,30 @@ sudo edc_system_update.sh --force
    - Fetches latest `edge-device-core` binary and `libparameter_storage_manager.so` from GitHub releases
    - Downloads latest `senscord-edc-rpi-*_arm64.deb` package
 
-2. **OS Update Phase** (optional):
+2. **Version Check Phase**:
+   - Extracts version from downloaded package metadata
+   - Compares with current version from `/opt/edc/version_edc.txt`
+   - Skips update if already on the same version (unless `--force` is used)
+   - Version files are created atomically during installation
+
+3. **OS Update Phase** (optional):
    - Updates Raspberry Pi OS packages using apt (can be skipped with `--skip-os`)
    - Performs `apt update` and `apt upgrade` operations
 
-3. **Deployment Detection**:
+4. **Deployment Detection**:
    - Detects current active deployment (`/opt/edcA` or `/opt/edcB`)
    - Selects alternate directory for new installation
 
-4. **Installation Phase**:
+5. **Installation Phase**:
    - Creates directory structure: `bin/`, `lib/`
    - Extracts and installs packages to target directory
    - Senscord content is extracted directly to deployment root
+   - Creates version files:
+     - `/opt/edcX/version_edc.txt` (format: `Version: X.Y.Z`)
+     - `/opt/edcX/opt/senscord/version_senscord.txt` (format: `Version: X.Y.Z`)
    - Validates installation integrity
 
-5. **Activation Phase**:
+6. **Activation Phase**:
    - Updates both `/opt/edc` and `/opt/senscord` symbolic links atomically
    - Points to new deployment after successful installation (provides rollback protection)
 
@@ -109,15 +118,19 @@ sudo edc_system_update.sh --force
 │   │   └── edge-device-core
 │   ├── lib/
 │   │   └── libparameter_storage_manager.so
+│   ├── version_edc.txt         # EDC version file
 │   └── opt/                    # (from senscord deb package)
 │       └── senscord/
+│           └── version_senscord.txt  # Senscord version file
 └── edcB/                       # Green deployment
     ├── bin/
     │   └── edge-device-core
     ├── lib/
     │   └── libparameter_storage_manager.so
+    ├── version_edc.txt         # EDC version file
     └── opt/                    # (from senscord deb package)
         └── senscord/
+            └── version_senscord.txt  # Senscord version file
 ```
 
 ## Service Configuration
@@ -172,6 +185,14 @@ sudo apt install -y curl jq
 ```
 
 ## Safety Features
+
+### Version Control
+- **Automatic version detection**: Extracts version from package metadata
+- **Update skipping**: Avoids redundant updates when already on latest version
+- **Force update option**: `--force` flag bypasses version check for reinstallation
+- **Version files**: Stores version information in each deployment for tracking
+  - Format: `Version: X.Y.Z` (one line, with "Version: " prefix)
+  - Locations: `/opt/edc/version_edc.txt` and `/opt/edc/opt/senscord/version_senscord.txt`
 
 ### Rollback Protection
 - Installation to alternate directory ensures current deployment remains intact

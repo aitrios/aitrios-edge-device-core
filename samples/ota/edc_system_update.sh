@@ -28,6 +28,14 @@ CORE_PACKAGE=""
 SENSOR_PACKAGE=""
 CORE_BINARY=""
 
+# Version information
+CORE_VERSION=""
+SENSOR_VERSION=""
+
+# Command-line options
+FORCE_UPDATE=false
+SKIP_OS_UPDATE=false
+
 # Color codes for output
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
@@ -310,6 +318,7 @@ install_core_packages() {
     local target_dir="$1"
     
     log_info "Installing core packages to $target_dir..."
+    log_info "Installing edge-device-core version: $CORE_VERSION"
     
     # Extract core .deb package and find the binary and library
     local extract_dir="${TEMP_DIR}/core_extract"
@@ -355,6 +364,13 @@ install_core_packages() {
     cp "$library_path" "$target_dir/lib/libparameter_storage_manager.so"
     chmod 644 "$target_dir/lib/libparameter_storage_manager.so"
     
+    # Create version file in /tmp then move to target
+    local temp_version_file="/tmp/version_edc_$$.txt"
+    echo "Version: $CORE_VERSION" > "$temp_version_file"
+    chmod 644 "$temp_version_file"
+    mv "$temp_version_file" "$target_dir/version_edc.txt"
+    log_info "Created EDC version file: $target_dir/version_edc.txt (Version: $CORE_VERSION)"
+    
     log_debug "Core packages installed successfully"
 }
 
@@ -364,10 +380,30 @@ install_sensor_package() {
     
     log_info "Installing sensor package to $target_dir..."
     
+    # Extract version from .deb package
+    SENSOR_VERSION=$(dpkg-deb -I "$SENSOR_PACKAGE" | grep '^ Version:' | awk '{print $2}')
+    if [[ -z "$SENSOR_VERSION" ]]; then
+        error_exit "Could not extract version from sensor .deb package"
+    fi
+    log_info "Installing senscord version: $SENSOR_VERSION"
+    
     # Extract .deb package directly to target directory (not to senscord subdirectory)
     if ! dpkg-deb -x "$SENSOR_PACKAGE" "$target_dir"; then
         error_exit "Failed to extract sensor package"
     fi
+    
+    # Create version file in senscord directory
+    local senscord_dir="$target_dir/opt/senscord"
+    if [[ ! -d "$senscord_dir" ]]; then
+        error_exit "Senscord directory not found after extraction: $senscord_dir"
+    fi
+    
+    # Create version file in /tmp then move to target
+    local temp_version_file="/tmp/version_senscord_$$.txt"
+    echo "Version: $SENSOR_VERSION" > "$temp_version_file"
+    chmod 644 "$temp_version_file"
+    mv "$temp_version_file" "$senscord_dir/version_senscord.txt"
+    log_info "Created senscord version file: $senscord_dir/version_senscord.txt (Version: $SENSOR_VERSION)"
     
     log_debug "Sensor package installed successfully (content extracted directly to deployment root)"
 }
@@ -460,6 +496,34 @@ perform_update() {
     download_core_packages
     download_sensor_package
     
+    # Extract version from downloaded package
+    CORE_VERSION=$(dpkg-deb -I "$CORE_PACKAGE" | grep '^ Version:' | awk '{print $2}')
+    if [[ -z "$CORE_VERSION" ]]; then
+        error_exit "Could not extract version from downloaded .deb package"
+    fi
+    log_info "Downloaded edge-device-core version: $CORE_VERSION"
+    
+    # Check if update is needed (unless --force is specified)
+    if [[ "$FORCE_UPDATE" == true ]]; then
+        log_info "Force update enabled, skipping version check"
+    else
+        local current_version_file="$EDC_SYMLINK/version_edc.txt"
+        if [[ -f "$current_version_file" ]]; then
+            local current_version
+            current_version=$(grep '^Version:' "$current_version_file" | awk '{print $2}')
+            
+            if [[ -n "$current_version" && "$current_version" == "$CORE_VERSION" ]]; then
+                log_info "Already on latest version: $current_version"
+                log_info "Skipping update. Use --force to update anyway."
+                return 0
+            fi
+            
+            log_info "Current version: ${current_version:-unknown}, Latest version: $CORE_VERSION"
+        else
+            log_info "No current version file found, proceeding with installation"
+        fi
+    fi
+    
     # Determine deployment strategy
     local current_deployment target_deployment
     current_deployment=$(detect_current_deployment)
@@ -548,9 +612,6 @@ os_update() {
 
 # Main function
 main() {
-    local force=false
-    local skip_os=false
-    
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -563,11 +624,11 @@ main() {
                 exit 0
                 ;;
             --force)
-                force=true
+                FORCE_UPDATE=true
                 shift
                 ;;
             --skip-os)
-                skip_os=true
+                SKIP_OS_UPDATE=true
                 shift
                 ;;
             *)
@@ -589,7 +650,7 @@ main() {
     check_requirements
 
     # Execute OS update (unless skipped)
-    if [[ "$skip_os" != true ]]; then
+    if [[ "$SKIP_OS_UPDATE" != true ]]; then
         if ! os_update; then
             log_warn "OS update failed, but continuing with edge-device-core update"
         fi

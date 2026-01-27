@@ -20,8 +20,20 @@ readonly SENSCORD_SYMLINK="/opt/senscord"
 readonly TEMP_DIR="/tmp/edc_update_$$"
 
 # GitHub repositories
-readonly CORE_REPO="aitrios/aitrios-edge-device-core"
-readonly SENSOR_REPO="aitrios/aitrios-edge-device-sensor"
+readonly CORE_REPO="SonySemiconductorSolutions/aitrios-edge-device-core"
+readonly SENSOR_REPO="SonySemiconductorSolutions/aitrios-edge-device-core-sensor"
+
+# GitHub authentication (required for private repositories)
+readonly TOKEN_FILE="/etc/edge-device-core/github-token"
+
+# Load GitHub token from file
+if [[ -f "$TOKEN_FILE" ]]; then
+    GITHUB_TOKEN=$(cat "$TOKEN_FILE" 2>/dev/null | tr -d '[:space:]')
+else
+    GITHUB_TOKEN=""
+fi
+
+readonly GITHUB_TOKEN
 
 # Downloaded files
 CORE_PACKAGE=""
@@ -115,6 +127,14 @@ check_requirements() {
         error_exit "Insufficient disk space in /opt (need at least 1GB free)"
     fi
     
+    # GitHub token check (REQUIRED for private repositories)
+    if [[ -z "$GITHUB_TOKEN" ]]; then
+        error_exit "GitHub token not found. Please create $TOKEN_FILE with your GitHub personal access token."
+    else
+        log_debug "GitHub token loaded from file: $TOKEN_FILE"
+        log_debug "GitHub token length: ${#GITHUB_TOKEN}"
+    fi
+    
     log_info "System requirements check passed"
 }
 
@@ -125,7 +145,10 @@ get_latest_release() {
     
     # Don't log here to avoid mixing with JSON output
     
-    if ! release_info=$(curl -s "https://api.github.com/repos/${repo}/releases/latest"); then
+    if ! release_info=$(curl -s \
+        -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/repos/${repo}/releases/latest"); then
         log_error "Failed to fetch release information for ${repo}"
         return 1
     fi
@@ -155,7 +178,10 @@ download_file() {
     
     log_info "Downloading $(basename "$output_file")..."
     
-    if ! curl -L -o "$output_file" "$url"; then
+    if ! curl -L \
+        -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+        -H "Accept: application/octet-stream" \
+        -o "$output_file" "$url"; then
         error_exit "Failed to download $url"
     fi
     
@@ -202,7 +228,8 @@ download_core_packages() {
     fi
     
     # Extract URL for the .deb package (contains both binary and library)
-    download_url_binary=$(jq -r '.assets[] | select(.name | test("edge-device-core-[0-9.]+.*_arm64\\.deb$")) | .browser_download_url' "$temp_json" 2>/dev/null || echo "")
+    # Use API URL instead of browser_download_url for private repositories
+    download_url_binary=$(jq -r '.assets[] | select(.name | test("edge-device-core-[0-9.]+.*_arm64\\.deb$")) | .url' "$temp_json" 2>/dev/null || echo "")
     
     # Debug: show all available assets
     log_debug "All available assets:"
@@ -242,7 +269,8 @@ download_sensor_package() {
     local temp_json="${TEMP_DIR}/sensor_release_info.json"
     echo "$release_info" > "$temp_json"
     
-    download_url=$(jq -r '.assets[] | select(.name | test("senscord-edc-rpi-[0-9.]+.*_arm64\\.deb$")) | .browser_download_url' "$temp_json" 2>/dev/null || echo "")
+    # Use API URL instead of browser_download_url for private repositories
+    download_url=$(jq -r '.assets[] | select(.name | test("senscord-edc-rpi-[0-9.]+.*_arm64\\.deb$")) | .url' "$temp_json" 2>/dev/null || echo "")
     
     if [[ -z "$download_url" ]]; then
         log_debug "Available assets:"

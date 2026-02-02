@@ -25,6 +25,7 @@ The expected configuration format is:
 {
     "PRIVATE_deploy_firmware": {
         "req_info": {"req_id": "hogefugapiyo123"},
+        "version": "1.0.0",
         "targets": [
             {
                 "component": 1,
@@ -41,17 +42,25 @@ The expected configuration format is:
 
 **Configuration Parameters:**
 
+**At `PRIVATE_deploy_firmware` level:**
+* **req_info**: Request information object
+  - **req_id**: Unique identifier for this configuration request
+* **version**: Optional package version identifier
+  - For Raspberry Pi EDC, this value is echoed back in the state response as-is
+  - If omitted, the field will not appear in the state response
+
+**In `targets` array:**
 * **component**: Integer value `1` (fixed) - Indicates the target of OTA is system firmware
 * **chip**: String value `main_chip` (fixed) - Represents the system firmware running on the main application processor
-* **version**: Empty string (fixed) or omitted - OTA specification always updates to the latest EDC version
-* **package_url**: Empty string (fixed) or omitted - System image download is handled automatically
-* **hash**: Empty string (fixed) or omitted - Hash verification is handled automatically
-* **size**: Integer value `0` (fixed) or omitted - Size is handled automatically
+* **version**: Ignored if specified - OTA specification always updates to the latest EDC version
+* **package_url**: Ignored if specified - System image download is handled automatically
+* **hash**: Ignored if specified - Hash verification is handled automatically
+* **size**: Ignored if specified - Size is handled automatically
 
 > **Important:**
 > For the OTA specification, only `component` and `chip` are required with fixed values as shown above.
-> The `version`, `package_url`, `hash`, and `size` parameters can be omitted. If specified, they must be
-> empty strings or `0`, otherwise the configuration will be treated as an error.
+> The `version`, `package_url`, `hash`, and `size` parameters can be omitted. If specified, their values
+> will be ignored, and the OTA process will proceed normally.
 
 **Minimal Configuration Example:**
 
@@ -92,6 +101,7 @@ The device returns the following state format:
 {
     "PRIVATE_deploy_firmware": {
         "req_info": {"req_id": "hogefugapiyo123"},
+        "version": "1.0.0",
         "targets": [
             {
                 "component": 1,
@@ -103,22 +113,35 @@ The device returns the following state format:
                 "progress": 100,
                 "process_state": "done"
             }
-        ]
-    },
-    "res_info": {
-        "res_id": "hogefugapiyo123",
-        "code": 0,
-        "detail_msg": "ok"
+        ],
+        "res_info": {
+            "res_id": "hogefugapiyo123",
+            "code": 0,
+            "detail_msg": "ok"
+        }
     }
 }
 ```
 
 **State Response Parameters:**
 
-**req_info:**
-- Returned as-is from the configuration
+**At `PRIVATE_deploy_firmware` level:**
+* **version**: 
+  - For Raspberry Pi EDC: Echoes back the value from the configuration if it was specified
+  - If not specified in the configuration, this field will not appear in the state response
+  - This represents the package version identifier
+* **req_info**:
+  - Returned as-is from the configuration
+* **res_info**:
+  - **res_id**: Carries forward the `req_info.req_id` (or the latest value for spontaneous state reports)
+  - **code**: 
+    - On success: `0`
+    - On failure: `13`
+  - **detail_msg**: 
+    - On success: `ok`
+    - On failure: `internal`
 
-**targets:**
+**In `targets` array:**
 - **component**: Fixed value `1`
 - **chip**: Fixed value `main_chip`
 - **package_url**: Empty string
@@ -133,15 +156,6 @@ The device returns the following state format:
 - **process_state**: 
   - On success: `done`
   - On failure: `failed`
-
-**res_info:**
-- **res_id**: Carries forward the `req_info.req_id` (or the latest value for spontaneous state reports)
-- **code**: 
-  - On success: `0`
-  - On failure: `13`
-- **detail_msg**: 
-  - On success: `ok`
-  - On failure: `internal`
 
 ### Additional Info State
 
@@ -324,7 +338,31 @@ cd aitrios-edge-device-core
 > All commands in this section should be executed on the edge device (Raspberry Pi).
 > In this guide, we use `~/workspace` as the working directory. Replace it with your preferred path if needed.
 
-### Step 3: Remove Previous Installations (If Any)
+### Step 3: Set Up GitHub Authentication
+
+Since the aitrios-edge-device-core repository is private, you need to set up GitHub authentication
+for the OTA update script to download the latest releases.
+
+Create a token file with your GitHub Personal Access Token:
+
+```bash
+# On the edge device: Create configuration directory
+sudo mkdir -p /etc/edge-device-core
+
+# Create token file (replace with your actual token)
+echo "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" | sudo tee /etc/edge-device-core/github-token > /dev/null
+
+# Secure the token file (readable only by root)
+sudo chmod 600 /etc/edge-device-core/github-token
+```
+
+> **Important:**
+> - Replace `ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` with your actual GitHub Personal Access Token.
+> - The token must have `repo` scope to access private repositories.
+> - You can create a Personal Access Token at: https://github.com/settings/tokens
+> - Keep your token secure and never share it publicly.
+
+### Step 4: Remove Previous Installations (If Any)
 
 On the edge device, if you have previously installed EDC or senscord packages using `apt`, remove them first
 to avoid conflicts with the OTA deployment structure.
@@ -341,7 +379,7 @@ sudo rm -rf /opt/senscord
 > **Note:**
 > Skip this step if this is your first installation.
 
-### Step 4: Set Up the OTA Update Script
+### Step 5: Set Up the OTA Update Script
 
 On the edge device, copy the OTA update script to the system location and make it executable.
 
@@ -357,7 +395,7 @@ sudo rm -fr /opt/senscord
 sudo rm -fr /opt/edc
 ```
 
-### Step 5: Install EDC and Senscord Using OTA Script
+### Step 6: Install EDC and Senscord Using OTA Script
 
 On the edge device, run the OTA update script to download and install the latest versions of EDC and senscord.
 This will also create the initial blue-green deployment structure.
@@ -374,7 +412,49 @@ sudo /sbin/edc_system_update.sh
 > - Creates the blue-green deployment structure at `/opt/edcA` and `/opt/edcB`
 > - Sets up symbolic links at `/opt/edc` and `/opt/senscord`
 
-### Step 6: Configure the Systemd Service
+### Step 7 (Optional): Replace with Test Binary
+
+> **Note:**
+> This step is **optional** and should only be performed if you want to test OTA update functionality
+> with a test binary. If you are using the production release for normal operations, skip this step
+> and proceed directly to Step 8.
+
+If you have obtained a test binary and want to test the OTA update functionality, you can replace
+the EDC binary and version file with test versions.
+
+```bash
+# On the edge device: Navigate to the directory where you downloaded the test binary
+cd ~/Downloads
+
+# Create a directory for extracting the .deb package
+mkdir extract_dir
+
+# Extract the test .deb package (replace the filename with your actual test package)
+dpkg-deb -x edge-device-core-*_arm64.deb extract_dir/
+
+# Replace the EDC binary with the test binary
+sudo cp ~/Downloads/extract_dir/usr/bin/edge_device_core /opt/edc/bin/edge_device_core
+
+# Set a test version number (e.g., 0.0.0) to simulate an older version
+echo "Version: 0.0.0" | sudo tee /opt/edc/version_edc.txt > /dev/null
+```
+
+> **What this does:**
+> - Extracts the test EDC binary from the .deb package
+> - Replaces the current EDC binary with the test version
+> - Sets the version to `0.0.0` so that the OTA update will detect it as an older version
+>   and perform an actual update when triggered
+
+After performing this step, you can test the OTA update functionality by triggering an update
+through the console, which should update from version `0.0.0` to the latest release version.
+
+> **Important:**
+> If you performed Step 7, make sure to return to the aitrios-edge-device-core repository directory before proceeding to Step 8:
+> ```bash
+> cd ~/workspace/aitrios-edge-device-core
+> ```
+
+### Step 8: Configure the Systemd Service
 
 On the edge device, deploy the systemd service file to enable automatic startup and service management.
 
@@ -386,7 +466,7 @@ sudo systemctl stop edge-device-core.service
 sudo cp samples/ota/edge-device-core.service /etc/systemd/system/
 ```
 
-### Step 7: Create Database and Configuration Directory
+### Step 9: Create Database and Configuration Directory
 
 On the edge device, create the directory for EDC's database and configuration files.
 
@@ -401,7 +481,7 @@ sudo cp script/update_psm_db.py /var/lib/edge-device-core/
 export EDGE_DEVICE_CORE_DB_PATH=/var/lib/edge-device-core/db.sqlite3
 ```
 
-### Step 8: Set Up Device Certificates
+### Step 10: Set Up Device Certificates
 
 On the edge device, copy your device certificates to the system location.
 
@@ -428,7 +508,7 @@ sudo cp ../*_cert.pem /etc/evp/
 sudo cp ../*_key.pem /etc/evp/
 ```
 
-### Step 9: Configure MQTT and Platform Parameters
+### Step 11: Configure MQTT and Platform Parameters
 
 On the edge device, set the MQTT and platform parameters in the database.
 
@@ -450,7 +530,7 @@ sudo python3 /var/lib/edge-device-core/update_psm_db.py --key PlStorageDataEvpIo
 sudo python3 /var/lib/edge-device-core/update_psm_db.py --key PlStorageDataEvpTls --value 0 --db-file "${EDGE_DEVICE_CORE_DB_PATH}"
 ```
 
-### Step 10: Configure Root Certificate
+### Step 12: Configure Root Certificate
 
 On the edge device, set the root certificate for TLS verification.
 
@@ -461,7 +541,7 @@ sudo python3 /var/lib/edge-device-core/update_psm_db.py --key PlStorageDataPkiRo
 sudo python3 /var/lib/edge-device-core/update_psm_db.py --key PlStorageDataPkiRootCertsHash --value "$(sha256sum "${ROOT_CA_PATH}" | cut -d' ' -f1)" --db-file ${EDGE_DEVICE_CORE_DB_PATH}
 ```
 
-### Step 11: Create Required Directories
+### Step 13: Create Required Directories
 
 On the edge device, create additional directories required for EDC operation.
 
@@ -470,7 +550,7 @@ On the edge device, create additional directories required for EDC operation.
 sudo mkdir -p /evp_data/modules
 ```
 
-### Step 12: Set Up udev Rules
+### Step 14: Set Up udev Rules
 
 On the edge device, configure udev rules for I2C device access.
 
@@ -482,7 +562,7 @@ sudo cp udev/60-edc.rules /etc/udev/rules.d/
 sudo udevadm trigger --subsystem-match=i2c
 ```
 
-### Step 13: Start the EDC Service
+### Step 15: Start the EDC Service
 
 On the edge device, now that everything is configured, start the EDC service.
 
@@ -497,7 +577,7 @@ sudo systemctl start edge-device-core.service
 sudo systemctl enable edge-device-core.service
 ```
 
-### Step 14: Verify the Service is Running
+### Step 16: Verify the Service is Running
 
 On the edge device, check the service status and logs to ensure EDC is running correctly.
 
@@ -526,7 +606,7 @@ system_app_main.c ... [INF] agent connected to hub                   # Successfu
 - If you see `MQTT_ERROR_RECONNECT_FAILED`: This indicates that edge-device-core is unable to connect to the MQTT broker. Check your MQTT broker configuration and network connectivity.
 - If you see `agent connected to hub`: This indicates that edge-device-core is successfully connected to the MQTT broker and ready for operation.
 
-### Step 15: Stop the EDC Service (Optional)
+### Step 17: Stop the EDC Service (Optional)
 
 On the edge device, if you need to stop the EDC service for any reason:
 
@@ -540,7 +620,7 @@ sudo systemctl stop edge-device-core.service
 **Issue: Service started before database configuration (PS Mode activation)**
 
 If you accidentally start the EDC service before completing the database configuration
-(before Step 9), the service will start in PS mode and set the `QRModeStateFlag` in
+(before Step 11), the service will start in PS mode and set the `QRModeStateFlag` in
 the database to `0x77777777` (2004318071).
 
 **Symptoms:**
@@ -559,8 +639,8 @@ the database to `0x77777777` (2004318071).
    sudo rm -f /var/lib/edge-device-core/db.sqlite3
    ```
 
-3. Reconfigure the database by repeating Step 9 (Configure MQTT and Platform Parameters)
-   and Step 10 (Configure Root Certificate)
+3. Reconfigure the database by repeating Step 11 (Configure MQTT and Platform Parameters)
+   and Step 12 (Configure Root Certificate)
 
 **Issue: MODULE_DIR creation error**
 
@@ -571,7 +651,7 @@ evp_agent: No such file or directory: Failed to create MODULE_DIR /evp_data/modu
 
 **Solution:**
 
-Create the required directory (this is Step 11 of the setup):
+Create the required directory (this is Step 13 of the setup):
 ```bash
 sudo mkdir -p /evp_data/modules
 ```
@@ -580,6 +660,35 @@ Then restart the EDC service:
 ```bash
 sudo systemctl restart edge-device-core.service
 ```
+
+**Issue: GitHub Authentication Failure**
+
+If the OTA update script fails to download the latest releases from GitHub, it may be due to
+authentication issues with the GitHub Personal Access Token.
+
+**Symptoms:**
+- OTA update script fails with authentication errors
+- Unable to download EDC or senscord packages from GitHub releases
+
+**Solution:**
+
+Verify the GitHub token is properly configured:
+
+```bash
+# Verify token file exists and has content
+sudo cat /etc/edge-device-core/github-token
+
+# Check file permissions (should be -rw------- 1 root root)
+ls -la /etc/edge-device-core/github-token
+
+# Test GitHub API access with token
+TOKEN=$(sudo cat /etc/edge-device-core/github-token)
+curl -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/SonySemiconductorSolutions/aitrios-edge-device-core/releases/latest | jq -r '.tag_name'
+```
+
+If the token test fails, recreate the token file with a valid GitHub Personal Access Token (see Step 3).
 
 ---
 
@@ -598,7 +707,24 @@ Before proceeding with console operations, ensure you have completed the
 First, register your edge device with the AITRIOS Cloud Console. Follow the device
 registration procedures provided in the AITRIOS documentation.
 
-### Step 2: Import the OTA GENERIC Package
+### Step 2: Verify Device State (additional_info)
+
+After registering your device, verify that the device is reporting its state correctly,
+including version information.
+
+1. Navigate to **Console V2** → **Devices**
+2. Select your device from the list
+3. Click the **State** tab
+
+You will see the device state information including `additional_info`:
+
+![Additional Info State](images/additional_info.png)
+
+> **Note:**
+> The information displayed in `additional_info` is implementation-dependent and may vary
+> depending on the device firmware and configuration.
+
+### Step 3: Import the OTA GENERIC Package
 
 Import the OTA package for GENERIC devices into the console.
 
@@ -611,7 +737,7 @@ Upon successful import, you will see a confirmation screen like this:
 
 ![Import Success](images/scs_import_success.png)
 
-### Step 3: Execute Deployment from the UI
+### Step 4: Execute Deployment from the UI
 
 Now you can deploy the OTA update to your device.
 
@@ -646,7 +772,7 @@ If there are many packages listed, you can filter by **Target Device Type: GENER
 
 This will initiate the OTA update process on your device.
 
-### Step 4: Verify the Results
+### Step 5: Verify the Results
 
 You can verify the update status in multiple ways:
 
@@ -678,7 +804,7 @@ developer tools (for Microsoft Edge):
 
 ![Deployment Success - Network View](images/deploy_success_3.png)
 
-### Step 5: Reboot the Device
+### Step 6: Reboot the Device
 
 After a successful OTA update, you must reboot the device to apply the changes.
 

@@ -21,7 +21,24 @@ The update system implements a blue-green deployment strategy where:
 
 ## Installation
 
-### 1. Run the Update Script to Install the Latest EDC
+### 1. Set Up GitHub Authentication
+
+Create a token file with your GitHub Personal Access Token:
+
+```bash
+# Create configuration directory
+sudo mkdir -p /etc/edge-device-core
+
+# Create token file (replace with your actual token)
+echo "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" | sudo tee /etc/edge-device-core/github-token > /dev/null
+
+# Secure the token file (readable only by root)
+sudo chmod 600 /etc/edge-device-core/github-token
+```
+
+**Note**: Obtain a GitHub Personal Access Token with `repo` scope from GitHub Settings > Developer settings > Personal access tokens.
+
+### 2. Run the Update Script to Install the Latest EDC
 
 ```bash
 # Copy the script to a system location
@@ -34,7 +51,7 @@ sudo chmod +x /sbin/edc_system_update.sh
 sudo /sbin/edc_system_update.sh
 ```
 
-### 2. Deploy the Updated Service File
+### 3. Deploy the Updated Service File
 
 ```bash
 # Stop the current service if it exists
@@ -57,6 +74,9 @@ sudo systemctl enable edge-device-core.service
 ## Usage
 
 ### Basic Usage of Installation Script
+
+**Note**: Ensure GitHub authentication is configured (see Installation section).
+
 ```bash
 # Perform a standard update
 sudo edc_system_update.sh
@@ -80,21 +100,30 @@ sudo edc_system_update.sh --force
    - Fetches latest `edge-device-core` binary and `libparameter_storage_manager.so` from GitHub releases
    - Downloads latest `senscord-edc-rpi-*_arm64.deb` package
 
-2. **OS Update Phase** (optional):
+2. **Version Check Phase**:
+   - Extracts version from downloaded package metadata
+   - Compares with current version from `/opt/edc/version_edc.txt`
+   - Skips update if already on the same version (unless `--force` is used)
+   - Version files are created atomically during installation
+
+3. **OS Update Phase** (optional):
    - Updates Raspberry Pi OS packages using apt (can be skipped with `--skip-os`)
    - Performs `apt update` and `apt upgrade` operations
 
-3. **Deployment Detection**:
+4. **Deployment Detection**:
    - Detects current active deployment (`/opt/edcA` or `/opt/edcB`)
    - Selects alternate directory for new installation
 
-4. **Installation Phase**:
+5. **Installation Phase**:
    - Creates directory structure: `bin/`, `lib/`
    - Extracts and installs packages to target directory
    - Senscord content is extracted directly to deployment root
+   - Creates version files:
+     - `/opt/edcX/version_edc.txt` (format: `Version: X.Y.Z`)
+     - `/opt/edcX/opt/senscord/version_senscord.txt` (format: `Version: X.Y.Z`)
    - Validates installation integrity
 
-5. **Activation Phase**:
+6. **Activation Phase**:
    - Updates both `/opt/edc` and `/opt/senscord` symbolic links atomically
    - Points to new deployment after successful installation (provides rollback protection)
 
@@ -109,15 +138,19 @@ sudo edc_system_update.sh --force
 │   │   └── edge-device-core
 │   ├── lib/
 │   │   └── libparameter_storage_manager.so
+│   ├── version_edc.txt         # EDC version file
 │   └── opt/                    # (from senscord deb package)
 │       └── senscord/
+│           └── version_senscord.txt  # Senscord version file
 └── edcB/                       # Green deployment
     ├── bin/
     │   └── edge-device-core
     ├── lib/
     │   └── libparameter_storage_manager.so
+    ├── version_edc.txt         # EDC version file
     └── opt/                    # (from senscord deb package)
         └── senscord/
+            └── version_senscord.txt  # Senscord version file
 ```
 
 ## Service Configuration
@@ -153,6 +186,7 @@ Environment="PATH=/opt/edc/opt/senscord/bin:/bin:/usr/bin:/usr/local/bin"
 - **Privileges**: Root access required
 - **Disk Space**: Minimum 1GB free space in `/opt/`
 - **Network**: Internet connectivity for GitHub downloads
+- **Authentication**: GitHub Personal Access Token with `repo` scope stored in `/etc/edge-device-core/github-token`
 
 ### Required Utilities
 - `curl` - For downloading packages
@@ -172,6 +206,14 @@ sudo apt install -y curl jq
 ```
 
 ## Safety Features
+
+### Version Control
+- **Automatic version detection**: Extracts version from package metadata
+- **Update skipping**: Avoids redundant updates when already on latest version
+- **Force update option**: `--force` flag bypasses version check for reinstallation
+- **Version files**: Stores version information in each deployment for tracking
+  - Format: `Version: X.Y.Z` (one line, with "Version: " prefix)
+  - Locations: `/opt/edc/version_edc.txt` and `/opt/edc/opt/senscord/version_senscord.txt`
 
 ### Rollback Protection
 - Installation to alternate directory ensures current deployment remains intact
@@ -194,13 +236,25 @@ sudo apt install -y curl jq
 
 ### Common Issues
 
+#### Authentication Issues
+```bash
+# Verify token file exists and has content
+sudo cat /etc/edge-device-core/github-token
+
+# Check file permissions (should be -rw------- 1 root root)
+ls -la /etc/edge-device-core/github-token
+
+# Test GitHub API access with token
+TOKEN=$(sudo cat /etc/edge-device-core/github-token)
+curl -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/SonySemiconductorSolutions/aitrios-edge-device-core/releases/latest | jq -r '.tag_name'
+```
+
 #### Download Failures
 ```bash
 # Check internet connectivity
 ping -c 4 api.github.com
-
-# Check GitHub API access
-curl -s https://api.github.com/repos/aitrios/aitrios-edge-device-core/releases/latest
 ```
 
 #### Permission Issues

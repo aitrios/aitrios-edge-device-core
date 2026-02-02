@@ -20,13 +20,33 @@ readonly SENSCORD_SYMLINK="/opt/senscord"
 readonly TEMP_DIR="/tmp/edc_update_$$"
 
 # GitHub repositories
-readonly CORE_REPO="aitrios/aitrios-edge-device-core"
-readonly SENSOR_REPO="aitrios/aitrios-edge-device-sensor"
+readonly CORE_REPO="SonySemiconductorSolutions/aitrios-edge-device-core"
+readonly SENSOR_REPO="SonySemiconductorSolutions/aitrios-edge-device-core-sensor"
+
+# GitHub authentication (required for private repositories)
+readonly TOKEN_FILE="/etc/edge-device-core/github-token"
+
+# Load GitHub token from file
+if [[ -f "$TOKEN_FILE" ]]; then
+    GITHUB_TOKEN=$(cat "$TOKEN_FILE" 2>/dev/null | tr -d '[:space:]')
+else
+    GITHUB_TOKEN=""
+fi
+
+readonly GITHUB_TOKEN
 
 # Downloaded files
 CORE_PACKAGE=""
 SENSOR_PACKAGE=""
 CORE_BINARY=""
+
+# Version information
+CORE_VERSION=""
+SENSOR_VERSION=""
+
+# Command-line options
+FORCE_UPDATE=false
+SKIP_OS_UPDATE=false
 
 # Color codes for output
 readonly RED='\033[0;31m'
@@ -107,6 +127,14 @@ check_requirements() {
         error_exit "Insufficient disk space in /opt (need at least 1GB free)"
     fi
     
+    # GitHub token check (REQUIRED for private repositories)
+    if [[ -z "$GITHUB_TOKEN" ]]; then
+        error_exit "GitHub token not found. Please create $TOKEN_FILE with your GitHub personal access token."
+    else
+        log_debug "GitHub token loaded from file: $TOKEN_FILE"
+        log_debug "GitHub token length: ${#GITHUB_TOKEN}"
+    fi
+    
     log_info "System requirements check passed"
 }
 
@@ -117,7 +145,10 @@ get_latest_release() {
     
     # Don't log here to avoid mixing with JSON output
     
-    if ! release_info=$(curl -s "https://api.github.com/repos/${repo}/releases/latest"); then
+    if ! release_info=$(curl -s \
+        -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/repos/${repo}/releases/latest"); then
         log_error "Failed to fetch release information for ${repo}"
         return 1
     fi
@@ -147,7 +178,10 @@ download_file() {
     
     log_info "Downloading $(basename "$output_file")..."
     
-    if ! curl -L -o "$output_file" "$url"; then
+    if ! curl -L \
+        -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+        -H "Accept: application/octet-stream" \
+        -o "$output_file" "$url"; then
         error_exit "Failed to download $url"
     fi
     
@@ -194,7 +228,8 @@ download_core_packages() {
     fi
     
     # Extract URL for the .deb package (contains both binary and library)
-    download_url_binary=$(jq -r '.assets[] | select(.name | test("edge-device-core-[0-9.]+.*_arm64\\.deb$")) | .browser_download_url' "$temp_json" 2>/dev/null || echo "")
+    # Use API URL instead of browser_download_url for private repositories
+    download_url_binary=$(jq -r '.assets[] | select(.name | test("edge-device-core-[0-9.]+.*_arm64\\.deb$")) | .url' "$temp_json" 2>/dev/null || echo "")
     
     # Debug: show all available assets
     log_debug "All available assets:"
@@ -234,7 +269,8 @@ download_sensor_package() {
     local temp_json="${TEMP_DIR}/sensor_release_info.json"
     echo "$release_info" > "$temp_json"
     
-    download_url=$(jq -r '.assets[] | select(.name | test("senscord-edc-rpi-[0-9.]+.*_arm64\\.deb$")) | .browser_download_url' "$temp_json" 2>/dev/null || echo "")
+    # Use API URL instead of browser_download_url for private repositories
+    download_url=$(jq -r '.assets[] | select(.name | test("senscord-edc-rpi-[0-9.]+.*_arm64\\.deb$")) | .url' "$temp_json" 2>/dev/null || echo "")
     
     if [[ -z "$download_url" ]]; then
         log_debug "Available assets:"
@@ -310,6 +346,7 @@ install_core_packages() {
     local target_dir="$1"
     
     log_info "Installing core packages to $target_dir..."
+    log_info "Installing edge-device-core version: $CORE_VERSION"
     
     # Extract core .deb package and find the binary and library
     local extract_dir="${TEMP_DIR}/core_extract"
@@ -355,6 +392,13 @@ install_core_packages() {
     cp "$library_path" "$target_dir/lib/libparameter_storage_manager.so"
     chmod 644 "$target_dir/lib/libparameter_storage_manager.so"
     
+    # Create version file in /tmp then move to target
+    local temp_version_file="/tmp/version_edc_$$.txt"
+    echo "Version: $CORE_VERSION" > "$temp_version_file"
+    chmod 644 "$temp_version_file"
+    mv "$temp_version_file" "$target_dir/version_edc.txt"
+    log_info "Created EDC version file: $target_dir/version_edc.txt (Version: $CORE_VERSION)"
+    
     log_debug "Core packages installed successfully"
 }
 
@@ -364,10 +408,30 @@ install_sensor_package() {
     
     log_info "Installing sensor package to $target_dir..."
     
+    # Extract version from .deb package
+    SENSOR_VERSION=$(dpkg-deb -I "$SENSOR_PACKAGE" | grep '^ Version:' | awk '{print $2}')
+    if [[ -z "$SENSOR_VERSION" ]]; then
+        error_exit "Could not extract version from sensor .deb package"
+    fi
+    log_info "Installing senscord version: $SENSOR_VERSION"
+    
     # Extract .deb package directly to target directory (not to senscord subdirectory)
     if ! dpkg-deb -x "$SENSOR_PACKAGE" "$target_dir"; then
         error_exit "Failed to extract sensor package"
     fi
+    
+    # Create version file in senscord directory
+    local senscord_dir="$target_dir/opt/senscord"
+    if [[ ! -d "$senscord_dir" ]]; then
+        error_exit "Senscord directory not found after extraction: $senscord_dir"
+    fi
+    
+    # Create version file in /tmp then move to target
+    local temp_version_file="/tmp/version_senscord_$$.txt"
+    echo "Version: $SENSOR_VERSION" > "$temp_version_file"
+    chmod 644 "$temp_version_file"
+    mv "$temp_version_file" "$senscord_dir/version_senscord.txt"
+    log_info "Created senscord version file: $senscord_dir/version_senscord.txt (Version: $SENSOR_VERSION)"
     
     log_debug "Sensor package installed successfully (content extracted directly to deployment root)"
 }
@@ -460,6 +524,34 @@ perform_update() {
     download_core_packages
     download_sensor_package
     
+    # Extract version from downloaded package
+    CORE_VERSION=$(dpkg-deb -I "$CORE_PACKAGE" | grep '^ Version:' | awk '{print $2}')
+    if [[ -z "$CORE_VERSION" ]]; then
+        error_exit "Could not extract version from downloaded .deb package"
+    fi
+    log_info "Downloaded edge-device-core version: $CORE_VERSION"
+    
+    # Check if update is needed (unless --force is specified)
+    if [[ "$FORCE_UPDATE" == true ]]; then
+        log_info "Force update enabled, skipping version check"
+    else
+        local current_version_file="$EDC_SYMLINK/version_edc.txt"
+        if [[ -f "$current_version_file" ]]; then
+            local current_version
+            current_version=$(grep '^Version:' "$current_version_file" | awk '{print $2}')
+            
+            if [[ -n "$current_version" && "$current_version" == "$CORE_VERSION" ]]; then
+                log_info "Already on latest version: $current_version"
+                log_info "Skipping update. Use --force to update anyway."
+                return 0
+            fi
+            
+            log_info "Current version: ${current_version:-unknown}, Latest version: $CORE_VERSION"
+        else
+            log_info "No current version file found, proceeding with installation"
+        fi
+    fi
+    
     # Determine deployment strategy
     local current_deployment target_deployment
     current_deployment=$(detect_current_deployment)
@@ -548,9 +640,6 @@ os_update() {
 
 # Main function
 main() {
-    local force=false
-    local skip_os=false
-    
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -563,11 +652,11 @@ main() {
                 exit 0
                 ;;
             --force)
-                force=true
+                FORCE_UPDATE=true
                 shift
                 ;;
             --skip-os)
-                skip_os=true
+                SKIP_OS_UPDATE=true
                 shift
                 ;;
             *)
@@ -589,7 +678,7 @@ main() {
     check_requirements
 
     # Execute OS update (unless skipped)
-    if [[ "$skip_os" != true ]]; then
+    if [[ "$SKIP_OS_UPDATE" != true ]]; then
         if ! os_update; then
             log_warn "OS update failed, but continuing with edge-device-core update"
         fi

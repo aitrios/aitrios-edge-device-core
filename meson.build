@@ -5,7 +5,7 @@
 project(
 	'edge device core',
 	'c', 'cpp',
-	version : '0.4.0',
+	version : '0.4.0.1',
 )
 cc = meson.get_compiler('c')
 if meson.is_cross_build()
@@ -60,7 +60,10 @@ endif
 
 # And mbed tls
 mbedtls_vars = cmake.subproject_options()
-mbedtls_vars.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE':true})
+mbedtls_vars.add_cmake_defines({
+    'CMAKE_POSITION_INDEPENDENT_CODE': true,
+    'MBEDTLS_USER_CONFIG_FILE': 'include/mbedtls/user_config.h'
+})
 mbedtls = cmake.subproject('mbedtls', options : mbedtls_vars)
 mbedtls_dep = mbedtls.dependency('mbedtls')
 mbedcrypto_dep = mbedtls.dependency('mbedcrypto')
